@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, use } from 'react'; // Thêm 'use'
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import axios from 'axios';
 
 // --- ICONS ---
@@ -10,80 +10,78 @@ const SaveIcon = ({ size = 20 }) => <svg xmlns="http://www.w3.org/2000/svg" widt
 const ArrowLeftIcon = ({ size = 20 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 // --- END ICONS ---
 
-export default function EditCategoryPage({ params: paramsPromise }) {
-    // 1. Unwrap params bằng React.use() (Chuẩn Next.js 15+)
-    const params = use(paramsPromise);
-    const id = params.id;
-
+export default function EditProductPage() {
+    const params = useParams(); // Lấy ID từ URL
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
-    
-    const [categories, setCategories] = useState([]);
-    const IMAGE_BASE_URL = 'http://127.0.0.1:8000/images/category/';
+    const [categories, setCategories] = useState([]); // State danh sách danh mục
 
+    const IMAGE_BASE_URL = 'http://127.0.0.1:8000/images/product/';
+
+    // State dữ liệu form
     const [formData, setFormData] = useState({
         name: '',
-        parent_id: 0,
-        sort_order: 0,
+        category_id: '',
+        price: '', 
+        stock: '', 
         description: '',
         status: 1
     });
 
-    const [imageFile, setImageFile] = useState(null);
-    const [currentImageUrl, setCurrentImageUrl] = useState(null);
-    const [previewUrl, setPreviewUrl] = useState(null);
+    const [thumbnail, setThumbnail] = useState(null); 
+    const [currentImageUrl, setCurrentImageUrl] = useState(null); 
+    const [previewUrl, setPreviewUrl] = useState(null); 
 
+    // Load dữ liệu khi vào trang
     useEffect(() => {
-        if (!id) return;
-
         const fetchData = async () => {
-            try {
-                console.log("Đang tải dữ liệu cho ID:", id); // Debug ID
+            if (!params?.id) return;
 
-                const [detailRes, listRes] = await Promise.all([
-                    axios.get(`http://127.0.0.1:8000/api/category/${id}`),
+            try {
+                // Gọi song song 2 API: Lấy chi tiết sản phẩm & Lấy danh sách danh mục
+                const [productRes, categoryRes] = await Promise.all([
+                    axios.get(`http://127.0.0.1:8000/api/product/${params.id}`),
                     axios.get('http://127.0.0.1:8000/api/category')
                 ]);
 
-                // Xử lý danh sách cha
-                if (listRes.data.success) {
-                    const allCats = listRes.data.data || [];
-                    // Loại bỏ chính nó để không chọn mình làm cha
-                    setCategories(allCats.filter(cat => String(cat.id) !== String(id)));
+                // 1. Xử lý danh mục (để đổ vào Select)
+                if (categoryRes.data.success) {
+                    setCategories(categoryRes.data.data || []);
                 }
 
-                // Xử lý điền dữ liệu vào Form
-                if (detailRes.data.success) {
-                    const cat = detailRes.data.data;
-                    console.log("Dữ liệu nhận được:", cat); // Debug dữ liệu trả về
-
+                // 2. Xử lý sản phẩm (để điền vào Form)
+                if (productRes.data.success) {
+                    const product = productRes.data.data;
+                    
                     setFormData({
-                        name: cat.name || '',
-                        parent_id: cat.parent_id || 0,
-                        sort_order: cat.sort_order || 0,
-                        description: cat.description || '', // Xử lý nếu null thì thành rỗng
-                        status: cat.status ?? 1
+                        name: product.name,
+                        category_id: product.category_id,
+                        price: product.price_buy, 
+                        description: product.description || '',
+                        status: product.status,
+                        stock: product.qty || 0 
                     });
 
-                    if (cat.image) {
-                        const imgUrl = cat.image.startsWith('http') 
-                            ? cat.image 
-                            : IMAGE_BASE_URL + cat.image;
+                    // Xử lý ảnh cũ
+                    if (product.thumbnail) {
+                        const imgUrl = product.thumbnail.startsWith('http') 
+                            ? product.thumbnail 
+                            : IMAGE_BASE_URL + product.thumbnail;
                         setCurrentImageUrl(imgUrl);
                     }
                 }
-
             } catch (error) {
                 console.error('Lỗi tải dữ liệu:', error);
-                alert('Không thể tải thông tin danh mục!');
+                alert('Không thể tải dữ liệu sản phẩm hoặc danh mục!');
+                // router.push('/admin/product'); // Uncomment nếu muốn quay về khi lỗi
             } finally {
                 setFetching(false);
             }
         };
 
         fetchData();
-    }, [id]);
+    }, [params.id]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -93,8 +91,8 @@ export default function EditCategoryPage({ params: paramsPromise }) {
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setImageFile(file);
-            setPreviewUrl(URL.createObjectURL(file));
+            setThumbnail(file);
+            setPreviewUrl(URL.createObjectURL(file)); 
         }
     };
 
@@ -105,23 +103,26 @@ export default function EditCategoryPage({ params: paramsPromise }) {
         try {
             const data = new FormData();
             data.append('name', formData.name);
-            data.append('parent_id', formData.parent_id);
-            data.append('sort_order', formData.sort_order);
+            data.append('category_id', formData.category_id);
+            data.append('price_buy', formData.price);
             data.append('description', formData.description);
+            data.append('content', formData.description); 
             data.append('status', formData.status);
-            data.append('_method', 'PUT'); // Quan trọng cho Laravel Update
+            
+            // QUAN TRỌNG: Gửi _method=PUT để Laravel hiểu
+            data.append('_method', 'PUT');
 
-            if (imageFile) {
-                data.append('image', imageFile);
+            if (thumbnail) {
+                data.append('thumbnail', thumbnail);
             }
 
-            const res = await axios.post(`http://127.0.0.1:8000/api/category/${id}`, data, {
+            const res = await axios.post(`http://127.0.0.1:8000/api/product/${params.id}`, data, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
 
             if (res.data.success) {
-                alert('Cập nhật danh mục thành công!');
-                router.push('/admin/category');
+                alert('Cập nhật sản phẩm thành công!');
+                router.push('/admin/product');
             }
 
         } catch (error) {
@@ -137,40 +138,41 @@ export default function EditCategoryPage({ params: paramsPromise }) {
     }
 
     return (
-        <div className="max-w-4xl mx-auto p-6">
+        <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-8">
-                <h1 className="text-3xl font-bold text-slate-800">Chỉnh sửa Danh mục</h1>
-                <Link href="/admin/category" className="flex items-center text-slate-500 hover:text-indigo-600 transition">
+                <h1 className="text-3xl font-bold text-slate-800">Chỉnh sửa Sản phẩm</h1>
+                <Link href="/admin/product" className="flex items-center text-slate-500 hover:text-indigo-600 transition">
                     <ArrowLeftIcon />
-                    <span className="ml-2">Quay lại</span>
+                    <span className="ml-2">Quay lại danh sách</span>
                 </Link>
             </div>
 
             <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-lg p-8 space-y-6 border border-slate-200">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Tên danh mục */}
-                    <div className="md:col-span-2">
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Tên danh mục</label>
+                    {/* Tên sản phẩm */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">Tên sản phẩm</label>
                         <input
                             type="text"
                             name="name"
                             required
-                            value={formData.name} // Dữ liệu sẽ hiển thị ở đây
+                            value={formData.name}
                             onChange={handleChange}
                             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
                         />
                     </div>
 
-                    {/* Danh mục cha */}
+                    {/* Danh mục (Đã load động từ API) */}
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Danh mục cha</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">Danh mục</label>
                         <select
-                            name="parent_id"
-                            value={formData.parent_id}
+                            name="category_id"
+                            required
+                            value={formData.category_id}
                             onChange={handleChange}
                             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
                         >
-                            <option value="0">[Không có cha]</option>
+                            <option value="">-- Chọn danh mục --</option>
                             {categories.map((cat) => (
                                 <option key={cat.id} value={cat.id}>
                                     {cat.name}
@@ -179,39 +181,59 @@ export default function EditCategoryPage({ params: paramsPromise }) {
                         </select>
                     </div>
 
-                    {/* Thứ tự */}
+                    {/* Giá */}
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 mb-2">Thứ tự (Sort Order)</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">Giá (VNĐ)</label>
                         <input
                             type="number"
-                            name="sort_order"
-                            value={formData.sort_order}
+                            name="price"
+                            required
+                            value={formData.price}
                             onChange={handleChange}
                             className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
                         />
                     </div>
+
+                    {/* Trạng thái */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">Trạng thái</label>
+                        <select
+                            name="status"
+                            value={formData.status}
+                            onChange={handleChange}
+                            className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                        >
+                            <option value="1">Hiển thị</option>
+                            <option value="0">Ẩn</option>
+                        </select>
+                    </div>
                 </div>
 
-                {/* Upload Ảnh */}
+                {/* Phần Hình ảnh */}
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Hình ảnh danh mục</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Hình ảnh sản phẩm</label>
                     <div className="flex items-start space-x-6 p-4 bg-slate-50 rounded-lg border border-slate-100">
                         {/* Ảnh hiện tại */}
                         {!previewUrl && currentImageUrl && (
                             <div className="text-center">
                                 <p className="text-xs text-slate-500 mb-2">Ảnh hiện tại</p>
-                                <img src={currentImageUrl} alt="Current" className="w-24 h-24 object-cover rounded border" />
+                                <div className="w-24 h-24 border rounded-lg overflow-hidden bg-white shadow-sm">
+                                    <img src={currentImageUrl} alt="Current" className="w-full h-full object-cover" />
+                                </div>
                             </div>
                         )}
 
-                        {/* Ảnh mới */}
+                        {/* Ảnh mới chọn */}
                         {previewUrl && (
                             <div className="text-center">
-                                <p className="text-xs text-green-600 mb-2">Ảnh mới</p>
-                                <img src={previewUrl} alt="New" className="w-24 h-24 object-cover rounded border border-green-500" />
+                                <p className="text-xs text-green-600 mb-2 font-medium">Ảnh mới</p>
+                                <div className="w-24 h-24 border-2 border-green-500 rounded-lg overflow-hidden bg-white shadow-sm">
+                                    <img src={previewUrl} alt="New" className="w-full h-full object-cover" />
+                                </div>
                             </div>
                         )}
 
+                        {/* Input chọn file */}
                         <div className="flex-1 mt-2">
                             <input
                                 type="file"
@@ -224,40 +246,26 @@ export default function EditCategoryPage({ params: paramsPromise }) {
                                 file:bg-indigo-50 file:text-indigo-700
                                 hover:file:bg-indigo-100 cursor-pointer"
                             />
-                            <p className="mt-2 text-xs text-slate-500">Chọn ảnh mới để thay thế</p>
+                            <p className="mt-2 text-xs text-slate-500">Chọn ảnh mới để thay thế (PNG, JPG, GIF)</p>
                         </div>
                     </div>
                 </div>
 
                 {/* Mô tả */}
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Mô tả</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Mô tả sản phẩm</label>
                     <textarea
                         name="description"
-                        rows="3"
+                        rows="4"
                         value={formData.description}
                         onChange={handleChange}
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
                     ></textarea>
                 </div>
 
-                {/* Trạng thái */}
-                <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">Trạng thái</label>
-                    <select
-                        name="status"
-                        value={formData.status}
-                        onChange={handleChange}
-                        className="w-full md:w-1/3 px-4 py-2 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
-                    >
-                        <option value="1">Hiển thị</option>
-                        <option value="2">Ẩn</option>
-                    </select>
-                </div>
-
-                {/* Nút hành động */}
+                {/* Actions */}
                 <div className="flex justify-end pt-4 border-t">
-                    <Link href="/admin/category" className="mr-4">
+                    <Link href="/admin/product" className="mr-4">
                         <button type="button" className="px-6 py-2 rounded-lg text-slate-600 hover:bg-slate-100 transition font-medium">
                             Hủy bỏ
                         </button>

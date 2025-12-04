@@ -2,7 +2,7 @@ import './globals.css';
 import { AuthProvider } from './context/AuthContext';
 
 export const metadata = {
-  title: 'E-Commerce & Blog App',
+  title: 'Tuấn Em',
   description: 'Ứng dụng thương mại điện tử và blog hiện đại với Next.js.',
 };
 
