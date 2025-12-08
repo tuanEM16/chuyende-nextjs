@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import ProductService from '@/services/ProductService'; // Import Service
+import ProductService from '@/services/ProductService';
 
 // --- ICONS ---
 const Icon = ({ path, size = 20, className = '' }) => (
@@ -19,7 +19,7 @@ const Trash2Icon = (props) => <Icon path={["M3 6h18","M19 6v14a2 2 0 0 1-2 2H7a2
 export default function AdminProductPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [products, setProducts] = useState([]);
-    const [categories, setCategories] = useState([]); // Thêm state để map tên danh mục
+    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
 
     // Lấy dữ liệu

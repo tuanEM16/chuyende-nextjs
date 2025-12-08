@@ -28,7 +28,7 @@ const ProductService = {
     destroy: async (id) => {
         return await httpAxios.delete(`product/${id}`);
     },
-        getImageUrl: (filename) => {
+    getImageUrl: (filename) => {
         const IMAGE_BASE_URL = 'http://127.0.0.1:8000/images/product/';
         if (!filename) return "https://placehold.co/150?text=No+Image";
         if (filename.startsWith('http')) return filename;

@@ -1,0 +1,62 @@
+'use client';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import ProductAttributeService from '@/services/ProductAttributeService';
+
+export default function ProductAttributeList() {
+    const [items, setItems] = useState([]);
+
+    useEffect(() => {
+        ProductAttributeService.index().then(res => {
+            if(res.success) setItems(res.data);
+        });
+    }, []);
+
+    const handleDelete = async (id) => {
+        if(confirm('Xóa giá trị này?')) {
+            await ProductAttributeService.destroy(id);
+            setItems(items.filter(i => i.id !== id));
+        }
+    };
+
+    return (
+        <div className="p-6 space-y-6">
+            <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold text-slate-800">Chi tiết Thuộc tính SP</h1>
+                <Link href="/admin/productattribute/add" className="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+                    Thêm Giá trị
+                </Link>
+            </div>
+            <div className="bg-white rounded shadow overflow-hidden border border-slate-200">
+                <table className="min-w-full divide-y divide-slate-200">
+                    <thead className="bg-slate-50">
+                        <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sản phẩm</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Loại thuộc tính</th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Giá trị</th>
+                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-slate-200">
+                        {items.map((item) => (
+                            <tr key={item.id} className="hover:bg-slate-50">
+                                <td className="px-6 py-4 font-medium text-slate-900">
+                                    {item.product?.name || `Product ID: ${item.product_id}`}
+                                </td>
+                                <td className="px-6 py-4 text-slate-600">
+                                    {item.attribute?.name || `Attribute ID: ${item.attribute_id}`}
+                                </td>
+                                <td className="px-6 py-4 font-bold text-indigo-600">
+                                    {item.value}
+                                </td>
+                                <td className="px-6 py-4 text-center">
+                                    <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:text-red-800">Xóa</button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+}

@@ -1,30 +1,35 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import axios from 'axios';
+import PostService from '@/services/PostService'; // Import Service
 
-// --- ICONS ---
-const EditIcon = ({ size = 18 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
-const TrashIcon = ({ size = 18 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
-const PlusIcon = ({ size = 20 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
+// --- ICONS (Đồng bộ bộ icon chuẩn) ---
+const Icon = ({ path, size = 20, className = '' }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        {Array.isArray(path) ? path.map((p, i) => <path key={i} d={p} />) : <path d={path} />}
+    </svg>
+);
+const SearchIcon = (props) => <Icon path="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" {...props} />;
+const PlusIcon = (props) => <Icon path={["M12 5v14","M5 12h14"]} {...props} />;
+const EditIcon = (props) => <Icon path={["M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"]} {...props} />;
+const Trash2Icon = (props) => <Icon path={["M3 6h18","M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6","M10 11v6","M14 11v6","M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2"]} {...props} />;
 // --- END ICONS ---
 
 export default function AdminPostPage() {
+    const [searchTerm, setSearchTerm] = useState('');
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Đường dẫn ảnh (Bạn nhớ tạo thư mục public/images/post trong Laravel nhé)
-    const IMAGE_BASE_URL = 'http://127.0.0.1:8000/images/post/';
-
-    // 1. Gọi API lấy danh sách bài viết
+    // 1. Lấy dữ liệu
     useEffect(() => {
-        const fetchPosts = async () => {
+        const fetchData = async () => {
             try {
-                const res = await axios.get('http://127.0.0.1:8000/api/post');
-                if (res.data.success) {
-                    // Xử lý trường hợp có phân trang (res.data.data.data) hoặc không (res.data.data)
-                    setPosts(res.data.data.data || res.data.data || []);
+                setLoading(true);
+                const res = await PostService.index();
+                if (res.success) {
+                    // Xử lý linh hoạt data có phân trang hoặc không
+                    setPosts(res.data.data?.data || res.data.data || []); 
                 }
             } catch (error) {
                 console.error("Lỗi tải bài viết:", error);
@@ -32,17 +37,16 @@ export default function AdminPostPage() {
                 setLoading(false);
             }
         };
-        fetchPosts();
+        fetchData();
     }, []);
 
-    // 2. Xử lý xóa bài viết
+    // 2. Xử lý xóa
     const handleDelete = async (id) => {
-        if(window.confirm('Bạn có chắc chắn muốn xóa bài viết này không?')) {
+        if (window.confirm('Bạn có chắc chắn muốn xóa bài viết này không?')) {
             try {
-                await axios.delete(`http://127.0.0.1:8000/api/post/${id}`);
-                // Cập nhật lại giao diện sau khi xóa thành công
+                await PostService.destroy(id);
                 setPosts(posts.filter(p => p.id !== id));
-                alert("Đã xóa bài viết!");
+                alert("Đã xóa bài viết thành công!");
             } catch (error) {
                 console.error("Lỗi xóa:", error);
                 alert("Xóa thất bại!");
@@ -50,113 +54,142 @@ export default function AdminPostPage() {
         }
     };
 
-    // 3. Helper hiển thị ảnh an toàn
-    const renderImage = (filename) => {
-        if (!filename) return "https://placehold.co/80x50?text=No+Img";
-        return filename.startsWith('http') ? filename : IMAGE_BASE_URL + filename;
-    };
+    // 3. Filter tìm kiếm
+    const filteredPosts = useMemo(() => {
+        const lowerCaseSearch = searchTerm.toLowerCase();
+        return posts.filter(post =>
+            post.title?.toLowerCase().includes(lowerCaseSearch)
+        );
+    }, [searchTerm, posts]);
 
-    // 4. Helper format ngày tháng
+    // Helper format ngày
     const formatDate = (dateString) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('vi-VN'); // Hiển thị kiểu ngày Việt Nam
+        if (!dateString) return '---';
+        return new Date(dateString).toLocaleDateString('vi-VN');
     };
 
     return (
         <div className="space-y-8 p-6">
-            <div className="flex justify-between items-center">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <h1 className="text-3xl font-bold text-slate-800">Quản lý Bài viết</h1>
-                {/* Đổi button thành Link để chuyển trang thêm mới */}
                 <Link 
                     href="/admin/post/add" 
-                    className="flex items-center space-x-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition shadow-md"
+                    className="flex items-center justify-center space-x-2 bg-indigo-600 text-white px-5 py-2.5 rounded-lg font-medium hover:bg-indigo-700 transition shadow-md w-full sm:w-auto"
                 >
-                    <PlusIcon />
+                    <PlusIcon size={20} />
                     <span>Viết bài mới</span>
                 </Link>
             </div>
 
+            {/* Search Bar */}
+            <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <SearchIcon className="text-slate-400" size={20} />
+                    </div>
+                    <input
+                        type="text"
+                        placeholder="Tìm kiếm bài viết theo tiêu đề..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="block w-full pl-10 pr-3 py-2.5 border border-slate-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                    />
+                </div>
+            </div>
+
+            {/* Table */}
             <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-slate-200">
-                <table className="min-w-full divide-y divide-slate-200">
-                    <thead className="bg-slate-50">
-                        <tr>
-                            <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Hình ảnh</th>
-                            <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Tiêu đề</th>
-                            <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Ngày đăng</th>
-                            <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Trạng thái</th>
-                            <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-200 bg-white">
-                        {loading ? (
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-slate-200">
+                        <thead className="bg-slate-50">
                             <tr>
-                                <td colSpan="5" className="px-6 py-8 text-center text-slate-500">Đang tải dữ liệu...</td>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">Hình ảnh</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">Tiêu đề</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">Ngày đăng</th>
+                                <th className="px-6 py-4 text-left text-xs font-semibold text-slate-500 uppercase">Trạng thái</th>
+                                <th className="px-6 py-4 text-center text-xs font-semibold text-slate-500 uppercase">Hành động</th>
                             </tr>
-                        ) : posts.length > 0 ? (
-                            posts.map((post) => (
-                                <tr key={post.id} className="hover:bg-slate-50 transition">
-                                    {/* Cột Hình ảnh */}
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="h-12 w-20 rounded overflow-hidden border border-slate-200">
-                                            <img 
-                                                src={renderImage(post.image)} 
-                                                alt={post.title} 
-                                                className="h-full w-full object-cover"
-                                                onError={(e) => { e.target.src = "https://placehold.co/80x50?text=Error"; }}
-                                            />
-                                        </div>
-                                    </td>
-
-                                    {/* Cột Tiêu đề */}
-                                    <td className="px-6 py-4">
-                                        <div className="text-sm font-medium text-slate-900 line-clamp-1">{post.title}</div>
-                                        <div className="text-xs text-slate-500">{post.slug}</div>
-                                    </td>
-
-                                    {/* Cột Ngày đăng */}
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                                        {formatDate(post.created_at)}
-                                    </td>
-
-                                    {/* Cột Trạng thái */}
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        {post.status === 1 ? (
-                                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                Xuất bản
-                                            </span>
-                                        ) : (
-                                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                                Nháp
-                                            </span>
-                                        )}
-                                    </td>
-
-                                    {/* Cột Hành động */}
-                                    <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                                        <div className="flex justify-center space-x-3">
-                                            <Link href={`/admin/post/edit/${post.id}`} className="text-indigo-600 hover:text-indigo-900">
-                                                <EditIcon />
-                                            </Link>
-                                            <button 
-                                                onClick={() => handleDelete(post.id)} 
-                                                className="text-red-600 hover:text-red-900"
-                                            >
-                                                <TrashIcon />
-                                            </button>
-                                        </div>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200 bg-white">
+                            {loading ? (
+                                <tr>
+                                    <td colSpan="5" className="px-6 py-10 text-center text-slate-500">
+                                        Đang tải dữ liệu...
                                     </td>
                                 </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="5" className="px-6 py-8 text-center text-slate-500">
-                                    Chưa có bài viết nào.
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
+                            ) : filteredPosts.length > 0 ? (
+                                filteredPosts.map((post) => (
+                                    <tr key={post.id} className="hover:bg-slate-50 transition duration-150">
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <div className="h-12 w-20 rounded-md overflow-hidden border border-slate-200 bg-slate-100">
+                                                <img 
+                                                    src={PostService.getImageUrl(post.image)} 
+                                                    alt={post.title} 
+                                                    className="h-full w-full object-cover"
+                                                    onError={(e) => { 
+                                                        e.target.onerror = null;
+                                                        e.target.src = "https://placehold.co/80x50?text=No+Img"; 
+                                                    }}
+                                                />
+                                            </div>
+                                        </td>
+
+                                        <td className="px-6 py-4">
+                                            <div className="text-sm font-medium text-slate-900 line-clamp-1" title={post.title}>
+                                                {post.title}
+                                            </div>
+                                            <div className="text-xs text-slate-500 mt-1 max-w-[200px] truncate">
+                                                {post.slug}
+                                            </div>
+                                        </td>
+
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                            {formatDate(post.created_at)}
+                                        </td>
+
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            {post.status === 1 ? (
+                                                <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                                                    Xuất bản
+                                                </span>
+                                            ) : (
+                                                <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-semibold">
+                                                    Nháp
+                                                </span>
+                                            )}
+                                        </td>
+
+                                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                                            <div className="flex justify-center space-x-3">
+                                                <Link 
+                                                    href={`/admin/post/edit/${post.id}`} 
+                                                    className="text-indigo-600 hover:text-indigo-900 transition"
+                                                    title="Chỉnh sửa"
+                                                >
+                                                    <EditIcon size={18} />
+                                                </Link>
+                                                <button 
+                                                    onClick={() => handleDelete(post.id)} 
+                                                    className="text-red-400 hover:text-red-600 transition"
+                                                    title="Xóa"
+                                                >
+                                                    <Trash2Icon size={18} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="5" className="px-6 py-10 text-center text-slate-500">
+                                        Không tìm thấy bài viết nào.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );
