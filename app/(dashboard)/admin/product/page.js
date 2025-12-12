@@ -11,15 +11,15 @@ const Icon = ({ path, size = 20, className = '' }) => (
     </svg>
 );
 const SearchIcon = (props) => <Icon path="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" {...props} />;
-const PlusIcon = (props) => <Icon path={["M12 5v14","M5 12h14"]} {...props} />;
+const PlusIcon = (props) => <Icon path={["M12 5v14", "M5 12h14"]} {...props} />;
 const EditIcon = (props) => <Icon path={["M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"]} {...props} />;
-const Trash2Icon = (props) => <Icon path={["M3 6h18","M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6","M10 11v6","M14 11v6","M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2"]} {...props} />;
+const Trash2Icon = (props) => <Icon path={["M3 6h18", "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", "M10 11v6", "M14 11v6", "M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2"]} {...props} />;
+const EyeIcon = (props) => <Icon path={["M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z", "M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"]} {...props} />; // New Eye Icon
 // --- END ICONS ---
 
 export default function AdminProductPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [products, setProducts] = useState([]);
-    const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
 
     // Lấy dữ liệu
@@ -28,9 +28,11 @@ export default function AdminProductPage() {
             try {
                 setLoading(true);
                 const productRes = await ProductService.index();
-                
+
                 if (productRes.success) {
                     setProducts(productRes.data.data || productRes.data || []);
+                } else if (productRes.data && productRes.data.data) {
+                     setProducts(productRes.data.data);
                 }
 
             } catch (error) {
@@ -112,29 +114,31 @@ export default function AdminProductPage() {
                                 </tr>
                             ) : filteredProducts.length > 0 ? (
                                 filteredProducts.map((product) => (
-                                    <tr key={product.id} className="hover:bg-slate-50 transition duration-150">
+                                    <tr key={product.id} className="hover:bg-slate-50 transition duration-150 group">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
                                                 <div className="flex-shrink-0 h-12 w-12 bg-slate-100 rounded-lg overflow-hidden border border-slate-200">
                                                     <img
                                                         className="h-full w-full object-cover"
-                                                        // Sử dụng helper từ Service
                                                         src={ProductService.getImageUrl(product.thumbnail)}
                                                         alt={product.name}
                                                         onError={(e) => {
-                                                            e.target.onerror = null; 
+                                                            e.target.onerror = null;
                                                             e.target.src = "https://placehold.co/150?text=No+Image";
                                                         }}
                                                     />
                                                 </div>
                                                 <div className="ml-4">
-                                                    <div className="text-sm font-medium text-slate-900">{product.name}</div>
+                                                    {/* Link to Detail Page */}
+                                                    <Link href={`/admin/product/${product.id}/show`} className="text-sm font-medium text-slate-900 hover:text-indigo-600 transition">
+                                                        {product.name}
+                                                    </Link>
                                                     <div className="text-xs text-slate-500">ID: {product.id}</div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
-                                            ID: {product.category_id}
+                                            {product.category ? product.category.name : `ID: ${product.category_id}`}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-indigo-600">
                                             {Number(product.price_buy).toLocaleString('vi-VN')}₫
@@ -148,13 +152,25 @@ export default function AdminProductPage() {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                             <div className="flex justify-center space-x-3">
-                                                <Link 
-                                                    href={`/admin/product/${product.id}/edit`} 
-                                                    className="text-indigo-600 hover:text-indigo-900 transition" 
+                                                {/* View Button */}
+                                                <Link
+                                                    href={`/admin/product/${product.id}/show`}
+                                                    className="text-blue-500 hover:text-blue-700 transition"
+                                                    title="Xem chi tiết"
+                                                >
+                                                    <EyeIcon size={18} />
+                                                </Link>
+                                                
+                                                {/* Edit Button */}
+                                                <Link
+                                                    href={`/admin/product/${product.id}/edit`}
+                                                    className="text-indigo-600 hover:text-indigo-900 transition"
                                                     title="Chỉnh sửa"
                                                 >
                                                     <EditIcon size={18} />
                                                 </Link>
+                                                
+                                                {/* Delete Button */}
                                                 <button
                                                     onClick={() => handleDelete(product.id)}
                                                     className="text-red-400 hover:text-red-600 transition"

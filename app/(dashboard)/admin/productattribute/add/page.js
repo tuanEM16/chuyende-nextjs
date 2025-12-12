@@ -7,6 +7,8 @@ import AttributeService from '@/services/AttributeService';
 
 export default function AddProductAttribute() {
     const router = useRouter();
+    
+    // Data nguồn để chọn
     const [products, setProducts] = useState([]);
     const [attributes, setAttributes] = useState([]);
     
@@ -16,20 +18,22 @@ export default function AddProductAttribute() {
         value: ''
     });
 
-    // Load Product & Attribute để chọn
+    // Load danh sách Sản phẩm và Loại thuộc tính
     useEffect(() => {
-        Promise.all([ProductService.index(), AttributeService.index()])
-            .then(([prodRes, attrRes]) => {
-                if(prodRes.success) setProducts(prodRes.data.data || prodRes.data);
-                if(attrRes.success) setAttributes(attrRes.data.data || attrRes.data);
-            });
+        Promise.all([
+            ProductService.index(),
+            AttributeService.index()
+        ]).then(([prodRes, attrRes]) => {
+            if(prodRes.success) setProducts(prodRes.data.data || prodRes.data || []);
+            if(attrRes.success) setAttributes(attrRes.data.data || attrRes.data || []);
+        });
     }, []);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
             await ProductAttributeService.store(form);
-            alert('Thêm thành công!');
+            alert('Gán thuộc tính thành công!');
             router.push('/admin/productattribute');
         } catch (error) {
             alert('Lỗi khi thêm');
@@ -37,14 +41,15 @@ export default function AddProductAttribute() {
     };
 
     return (
-        <div className="max-w-2xl mx-auto p-6">
+        <div className="max-w-xl mx-auto p-6">
             <h1 className="text-2xl font-bold mb-6 text-slate-800">Gán Thuộc tính cho Sản phẩm</h1>
             <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow space-y-4 border border-slate-200">
                 
+                {/* Chọn Sản phẩm */}
                 <div>
                     <label className="block text-sm font-medium mb-1">Chọn Sản phẩm</label>
                     <select 
-                        className="w-full border p-2 rounded outline-none"
+                        className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-indigo-500"
                         onChange={e => setForm({...form, product_id: e.target.value})} 
                         required
                     >
@@ -55,10 +60,11 @@ export default function AddProductAttribute() {
                     </select>
                 </div>
 
+                {/* Chọn Loại Thuộc tính */}
                 <div>
                     <label className="block text-sm font-medium mb-1">Chọn Loại thuộc tính</label>
                     <select 
-                        className="w-full border p-2 rounded outline-none"
+                        className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-indigo-500"
                         onChange={e => setForm({...form, attribute_id: e.target.value})} 
                         required
                     >
@@ -69,18 +75,21 @@ export default function AddProductAttribute() {
                     </select>
                 </div>
 
+                {/* Nhập Giá trị */}
                 <div>
                     <label className="block text-sm font-medium mb-1">Giá trị</label>
                     <input 
                         type="text" 
-                        className="w-full border p-2 rounded outline-none" 
+                        className="w-full border p-2 rounded outline-none focus:ring-2 focus:ring-indigo-500" 
                         placeholder="VD: Đỏ, Xanh, XL, 30kg..."
                         onChange={e => setForm({...form, value: e.target.value})} 
                         required
                     />
                 </div>
 
-                <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700">Lưu</button>
+                <button type="submit" className="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 font-medium shadow">
+                    Lưu
+                </button>
             </form>
         </div>
     );
