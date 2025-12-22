@@ -15,7 +15,7 @@ const PlusIcon = (props) => <Icon path={["M12 5v14", "M5 12h14"]} {...props} />;
 const EditIcon = (props) => <Icon path={["M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"]} {...props} />;
 const Trash2Icon = (props) => <Icon path={["M3 6h18", "M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6", "M10 11v6", "M14 11v6", "M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2"]} {...props} />;
 const EyeIcon = (props) => <Icon path={["M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z", "M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"]} {...props} />; // New Eye Icon
-// --- END ICONS ---
+// --- END ICONS --
 
 export default function AdminProductPage() {
     const [searchTerm, setSearchTerm] = useState('');

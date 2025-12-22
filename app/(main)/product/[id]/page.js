@@ -1,33 +1,57 @@
 'use client';
 
-import { useState, useEffect, use } from 'react'; // Thêm use để xử lý params
+import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
-import axios from 'axios';
+import ProductService from '@/services/ProductService'; 
 
+// ==========================================
+// 1. SKELETON LOADING
+// ==========================================
+const ProductDetailSkeleton = () => (
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 animate-pulse bg-slate-50 min-h-screen">
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden grid grid-cols-1 lg:grid-cols-2">
+            <div className="bg-slate-200 h-[400px] lg:h-[600px] w-full"></div>
+            <div className="p-8 lg:p-12 space-y-6">
+                <div className="h-4 bg-slate-200 rounded w-1/4"></div>
+                <div className="h-10 bg-slate-200 rounded w-3/4"></div>
+                <div className="h-8 bg-slate-200 rounded w-1/3"></div>
+                <div className="space-y-3 pt-4">
+                    <div className="h-4 bg-slate-200 rounded w-full"></div>
+                    <div className="h-4 bg-slate-200 rounded w-2/3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
+// ==========================================
+// 2. MAIN COMPONENT
+// ==========================================
 export default function ProductDetailPage({ params: paramsPromise }) {
-    // 1. Giải nén ID từ params bằng React.use()
     const params = use(paramsPromise);
     const id = params.id;
 
     const [product, setProduct] = useState(null);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
+    const [activeImage, setActiveImage] = useState(null); // Chỉ lưu khi người dùng click chọn
 
-    // Cấu hình đường dẫn ảnh
-    const IMAGE_BASE_URL = 'http://127.0.0.1:8000/images/product/';
-
-    // 2. Fetch dữ liệu từ API
+    // --- 1. Fetch Data ---
     useEffect(() => {
         const fetchProduct = async () => {
             try {
-                const res = await axios.get(`http://127.0.0.1:8000/api/product/${id}`);
-                if (res.data.success) {
+                setLoading(true);
+                const res = await ProductService.show(id);
+                
+                if (res && res.data && res.data.success) {
                     setProduct(res.data.data);
+                    // Lưu ý: Không cần set activeImage ở đây nữa để tránh lỗi async
                 } else {
-                    setNotFound(true);
+                    setProduct(res.data || res);
+                    if (!res.data) setNotFound(true);
                 }
             } catch (error) {
-                console.error("Lỗi tải chi tiết sản phẩm:", error);
+                console.error("Lỗi tải chi tiết:", error);
                 setNotFound(true);
             } finally {
                 setLoading(false);
@@ -37,129 +61,180 @@ export default function ProductDetailPage({ params: paramsPromise }) {
         if (id) fetchProduct();
     }, [id]);
 
-    // Helper hiển thị ảnh
-    const getImageUrl = (filename) => {
-        if (!filename) return "https://placehold.co/600x600?text=No+Image";
-        if (filename.startsWith('http')) return filename;
-        return IMAGE_BASE_URL + filename;
-    };
+    // --- 2. Loading / Error UI ---
+    if (loading) return <ProductDetailSkeleton />;
+    if (notFound || !product) return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 px-4">
+            <h1 className="text-2xl font-bold text-slate-800 mb-4">Không tìm thấy sản phẩm</h1>
+            <Link href="/product" className="bg-indigo-600 text-white px-6 py-2 rounded-full">Quay lại</Link>
+        </div>
+    );
 
-    // 3. Xử lý trạng thái Loading
-    if (loading) {
-        return (
-            <div className="max-w-5xl mx-auto px-4 py-20 text-center">
-                <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-                <p className="mt-4 text-slate-500">Đang tải thông tin sản phẩm...</p>
-            </div>
-        );
+    // --- 3. LOGIC HIỂN THỊ ẢNH (QUAN TRỌNG) ---
+    // Gom tất cả ảnh vào 1 mảng gallery
+    const galleryImages = [];
+    if (product.thumbnail) galleryImages.push(ProductService.getImageUrl(product.thumbnail));
+    if (product.product_images && Array.isArray(product.product_images)) {
+        product.product_images.forEach(img => galleryImages.push(ProductService.getImageUrl(img.image)));
     }
 
-    // 4. Xử lý trạng thái Không tìm thấy (404)
-    if (notFound || !product) {
-        return (
-            <div className="max-w-5xl mx-auto px-4 py-20 text-center">
-                <h1 className="text-3xl font-bold text-red-600 mb-4">404 - Không tìm thấy Sản phẩm</h1>
-                <p className="text-lg text-slate-600">Sản phẩm bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
-                <Link href="/" className="mt-6 inline-block bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition duration-300">
-                    &larr; Quay lại trang chủ
-                </Link>
-            </div>
-        );
-    }
+    // Logic chọn ảnh hiển thị: Nếu activeImage có thì dùng, không thì lấy ảnh đầu tiên trong gallery
+    const displayImage = activeImage || (galleryImages.length > 0 ? galleryImages[0] : null);
 
-    // Giả lập rating (vì DB chưa có)
-    const rating = 5;
+    // --- 4. Logic Giá & Tồn kho ---
+    const stockQty = Number(product.qty || 0);
+    const isOutOfStock = stockQty <= 0;
+    const priceOriginal = Number(product.price_buy || 0);
+    const priceSaleRaw = product.price_sale;
+    const priceSale = priceSaleRaw ? Number(priceSaleRaw) : null;
+    const isSale = !!(priceSale && priceSale > 0);
+    const discountPercent = isSale ? Math.round(((priceOriginal - priceSale) / priceOriginal) * 100) : 0;
 
-    // 5. Hiển thị giao diện chi tiết
     return (
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
-                    
-                    {/* Cột 1: Hình ảnh */}
-                    <div className="bg-slate-100 p-8 flex items-center justify-center">
-                        <img 
-                            src={getImageUrl(product.thumbnail)} 
-                            alt={product.name} 
-                            className="w-full max-w-md h-auto rounded-lg shadow-lg object-cover transform hover:scale-105 transition-transform duration-500"
-                            onError={(e) => { e.target.src = "https://placehold.co/600x600?text=Error"; }}
-                        />
-                    </div>
+        <div className="bg-slate-50 min-h-screen py-8 lg:py-12">
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                {/* Breadcrumb */}
+                <nav className="flex items-center text-sm text-slate-500 mb-6 overflow-hidden whitespace-nowrap">
+                    <Link href="/" className="hover:text-indigo-600">Trang chủ</Link>
+                    <span className="mx-2">/</span>
+                    <Link href="/product" className="hover:text-indigo-600">Sản phẩm</Link>
+                    <span className="mx-2">/</span>
+                    <span className="text-slate-900 font-medium truncate">{product.name}</span>
+                </nav>
 
-                    {/* Cột 2: Thông tin chi tiết */}
-                    <div className="p-8 lg:p-12 flex flex-col justify-center">
-                        <div>
-                            {/* Danh mục (Hiển thị ID tạm thời, hoặc tên nếu API đã join bảng) */}
-                            <span className="inline-block bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide mb-4">
-                                Danh mục ID: {product.category_id}
-                            </span>
+                <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-0">
+                        
+                        {/* --- CỘT TRÁI: HÌNH ẢNH --- */}
+                        <div className="bg-gray-100 p-6 lg:p-10 flex flex-col items-center">
                             
+                            {/* ẢNH LỚN (ACTIVE) */}
+                            <div className="relative w-full aspect-square bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden mb-4 group cursor-zoom-in">
+                                <img 
+                                    src={displayImage || "https://placehold.co/600x600?text=No+Image"} 
+                                    alt={product.name} 
+                                    className="w-full h-full object-contain mix-blend-multiply transform transition-transform duration-500 group-hover:scale-110"
+                                    onError={(e) => { e.target.src = "https://placehold.co/600x600?text=Error"; }}
+                                />
+
+                                {/* Badge Sale */}
+                                {isSale && !isOutOfStock && (
+                                    <span className="absolute top-4 left-4 bg-red-600 text-white text-base font-bold px-3 py-1.5 rounded-lg shadow-md z-10 animate-pulse">
+                                        -{discountPercent}%
+                                    </span>
+                                )}
+
+                                {/* Badge Hết hàng */}
+                                {isOutOfStock && (
+                                    <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center z-20">
+                                        <span className="bg-slate-800 text-white text-xl font-bold px-6 py-3 rounded-lg shadow-xl border-2 border-white uppercase tracking-widest">
+                                            Hết hàng
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* LIST ẢNH NHỎ (GALLERY) */}
+                            {galleryImages.length > 0 && (
+                                <div className="grid grid-cols-5 gap-3 w-full">
+                                    {galleryImages.map((imgUrl, index) => (
+                                        <div 
+                                            key={index}
+                                            onClick={() => setActiveImage(imgUrl)}
+                                            className={`
+                                                cursor-pointer aspect-square rounded-lg border-2 overflow-hidden bg-white transition hover:opacity-100
+                                                ${displayImage === imgUrl ? 'border-indigo-600 ring-2 ring-indigo-100' : 'border-transparent opacity-60'}
+                                            `}
+                                        >
+                                            <img src={imgUrl} className="w-full h-full object-cover" alt={`Thumb ${index}`} />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* --- CỘT PHẢI: THÔNG TIN CHI TIẾT --- */}
+                        <div className="p-8 lg:p-12 flex flex-col justify-center bg-white">
+                            
+                            {/* Danh mục */}
+                            <div className="mb-4">
+                                <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                                    {product.category?.name || 'Sản phẩm'}
+                                </span>
+                            </div>
+                            
+                            {/* Tên Sản phẩm */}
                             <h1 className="text-3xl lg:text-4xl font-extrabold text-slate-900 mb-4 leading-tight">
                                 {product.name}
                             </h1>
                             
-                            {/* Đánh giá */}
-                            <div className="flex items-center text-yellow-500 mb-6">
-                                {'★'.repeat(rating)}
-                                {'☆'.repeat(5 - rating)}
-                                <span className="ml-2 text-slate-400 text-sm font-medium">({rating} sao)</span>
-                            </div>
+                            {/* Giá & Trạng thái */}
+                            <div className="mb-8 pb-8 border-b border-slate-100">
+                                <div className="flex flex-col sm:flex-row sm:items-end gap-4 mb-4">
+                                    {isSale ? (
+                                        <>
+                                            <span className="text-4xl font-black text-red-600">
+                                                {priceSale.toLocaleString('vi-VN')}₫
+                                            </span>
+                                            <div className="flex flex-col mb-1">
+                                                <span className="text-lg text-slate-400 line-through decoration-2">
+                                                    {priceOriginal.toLocaleString('vi-VN')}₫
+                                                </span>
+                                                <span className="text-xs text-red-500 font-medium">
+                                                    Tiết kiệm: {(priceOriginal - priceSale).toLocaleString('vi-VN')}₫
+                                                </span>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <span className="text-4xl font-black text-indigo-900">
+                                            {priceOriginal.toLocaleString('vi-VN')}₫
+                                        </span>
+                                    )}
+                                </div>
 
-                            {/* Giá */}
-                            <p className="text-4xl font-bold text-indigo-600 mb-6">
-                                {Number(product.price_buy).toLocaleString('vi-VN')}₫
-                            </p>
+                                <div className="flex items-center gap-2 text-sm font-medium">
+                                    <span className={`w-3 h-3 rounded-full ${isOutOfStock ? 'bg-red-500' : 'bg-green-500'}`}></span>
+                                    <span className={isOutOfStock ? 'text-red-600' : 'text-green-700'}>
+                                        {isOutOfStock ? 'Hết hàng' : `Còn hàng`}
+                                    </span>
+                                    {!isOutOfStock && <span className="text-slate-400 pl-2 border-l border-slate-300">Kho: {stockQty}</span>}
+                                </div>
+                            </div>
 
                             {/* Mô tả ngắn */}
-                            <div className="text-slate-600 mb-8 leading-relaxed prose prose-slate">
-                                <p>{product.description || "Chưa có mô tả cho sản phẩm này."}</p>
-                            </div>
-                            
-                            {/* Tình trạng tồn kho */}
-                            <div className="flex items-center mb-8">
-                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                                    product.qty > 0 
-                                    ? 'bg-green-100 text-green-800' 
-                                    : 'bg-red-100 text-red-800'
-                                }`}>
-                                    <span className={`w-2 h-2 rounded-full mr-2 ${product.qty > 0 ? 'bg-green-600' : 'bg-red-600'}`}></span>
-                                    {product.qty > 0 ? `Còn hàng (${product.qty})` : 'Hết hàng'}
-                                </span>
+                            <div className="prose prose-slate text-slate-600 mb-8">
+                                <p>{product.description || "Mô tả đang được cập nhật..."}</p>
                             </div>
 
-                            {/* Nút Thêm vào Giỏ hàng */}
-                            <div className="flex gap-4">
+                            {/* Thuộc tính */}
+                            {product.product_attributes && product.product_attributes.length > 0 && (
+                                <div className="grid grid-cols-2 gap-3 mb-8">
+                                    {product.product_attributes.map((attr, idx) => (
+                                        <div key={idx} className="bg-slate-50 p-3 rounded-lg border border-slate-100 text-sm">
+                                            <span className="text-slate-500 block text-xs uppercase mb-1">{attr.attribute?.name || 'Thuộc tính'}</span>
+                                            <span className="font-bold text-slate-800">{attr.value}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Nút hành động */}
+                            <div className="flex flex-col sm:flex-row gap-4 mt-auto">
                                 <button 
-                                    disabled={product.qty <= 0}
-                                    className={`flex-1 py-4 rounded-xl text-lg font-bold shadow-lg transition duration-300 transform active:scale-95 ${
-                                        product.qty > 0 
-                                        ? 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-500/30' 
-                                        : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+                                    disabled={isOutOfStock}
+                                    className={`flex-1 py-4 px-6 rounded-xl text-lg font-bold shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2
+                                    ${isOutOfStock 
+                                        ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' 
+                                        : 'bg-indigo-600 text-white hover:bg-indigo-700 hover:shadow-indigo-500/30'
                                     }`}
-                                    onClick={() => alert("Chức năng thêm vào giỏ hàng sẽ được cập nhật sau!")}
+                                    onClick={() => alert("Đã thêm vào giỏ hàng")}
                                 >
-                                    {product.qty > 0 ? 'Thêm vào Giỏ hàng' : 'Tạm hết hàng'}
-                                </button>
-                                {/* Nút yêu thích (Optional) */}
-                                <button className="p-4 rounded-xl border-2 border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-200 transition-colors">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                    </svg>
+                                    {isOutOfStock ? 'Tạm Hết Hàng' : 'Thêm Vào Giỏ'}
                                 </button>
                             </div>
-                        </div>
-                    </div>
-                </div>
 
-                {/* Phần nội dung chi tiết (Content) */}
-                <div className="border-t border-slate-100 p-8 lg:p-12">
-                    <h2 className="text-2xl font-bold text-slate-800 mb-6">Chi tiết sản phẩm</h2>
-                    <div className="prose prose-indigo max-w-none text-slate-600">
-                        {product.content ? (
-                            <div dangerouslySetInnerHTML={{ __html: product.content }} />
-                        ) : (
-                            <p>Không có thông tin chi tiết.</p>
-                        )}
+                        </div>
                     </div>
                 </div>
             </div>
