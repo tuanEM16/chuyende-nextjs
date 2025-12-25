@@ -4,16 +4,18 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import CategoryService from '@/services/CategoryService'; 
 
-// --- ICONS (Đồng bộ với Product Page) ---
+// --- ICONS ---
 const Icon = ({ path, size = 20, className = '' }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
         {Array.isArray(path) ? path.map((p, i) => <path key={i} d={p} />) : <path d={path} />}
     </svg>
 );
+
 const SearchIcon = (props) => <Icon path="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" {...props} />;
 const PlusIcon = (props) => <Icon path={["M12 5v14","M5 12h14"]} {...props} />;
 const EditIcon = (props) => <Icon path={["M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"]} {...props} />;
 const Trash2Icon = (props) => <Icon path={["M3 6h18","M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6","M10 11v6","M14 11v6","M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2"]} {...props} />;
+const EyeIcon = (props) => <Icon path={["M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-1 12z", "M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"]} {...props} />;
 // --- END ICONS ---
 
 export default function CategoryPage() {
@@ -21,14 +23,14 @@ export default function CategoryPage() {
     const [categories, setCategories] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // 1. Lấy dữ liệu từ Service
+    // 1. Lấy dữ liệu
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true);
                 const res = await CategoryService.index();
                 
-                if (res.success) {
+                if (res.data && (res.data.success || Array.isArray(res.data.data) || Array.isArray(res.data))) {
                     setCategories(res.data.data || res.data || []);
                 }
             } catch (error) {
@@ -40,7 +42,7 @@ export default function CategoryPage() {
         fetchData();
     }, []);
 
-    // 2. Xử lý xóa danh mục
+    // 2. Xử lý xóa
     const handleDelete = async (id) => {
         if (window.confirm('Bạn có chắc chắn muốn xóa danh mục này?')) {
             try {
@@ -54,7 +56,7 @@ export default function CategoryPage() {
         }
     };
 
-    // 3. Lọc danh mục theo từ khóa tìm kiếm
+    // 3. Lọc tìm kiếm
     const filteredCategories = useMemo(() => {
         const lowerCaseSearch = searchTerm.toLowerCase();
         return categories.filter(category =>
@@ -64,7 +66,7 @@ export default function CategoryPage() {
 
     return (
         <div className="space-y-8 p-6">
-            {/* Header & Button */}
+            {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <h1 className="text-3xl font-bold text-slate-800">Quản lý Danh mục</h1>
                 <Link 
@@ -76,7 +78,7 @@ export default function CategoryPage() {
                 </Link>
             </div>
 
-            {/* Search Bar */}
+            {/* Search */}
             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                 <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -125,10 +127,7 @@ export default function CategoryPage() {
                                                     src={CategoryService.getImageUrl(category.image)} 
                                                     alt={category.name} 
                                                     className="h-full w-full object-cover"
-                                                    onError={(e) => { 
-                                                        e.target.onerror = null;
-                                                        e.target.src = "https://placehold.co/50x50?text=No+Img"; 
-                                                    }}
+                                                    onError={CategoryService.handleImageError}
                                                 />
                                             </div>
                                         </td>
@@ -136,7 +135,6 @@ export default function CategoryPage() {
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="text-sm font-medium text-slate-900">
                                                 {category.name}
-                                                {/* Logic hiển thị parent_id */}
                                                 {category.parent_id !== 0 && (
                                                     <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
                                                         Con
@@ -157,8 +155,20 @@ export default function CategoryPage() {
                                             )}
                                         </td>
 
+                                        {/* --- CỘT HÀNH ĐỘNG --- */}
                                         <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
                                             <div className="flex justify-center space-x-3">
+                                                
+                                                {/* Nút Xem Chi Tiết (ĐÃ SỬA URL) */}
+                                                <Link 
+                                                    href={`/admin/category/${category.id}/show`} 
+                                                    className="text-blue-500 hover:text-blue-700 transition"
+                                                    title="Xem chi tiết"
+                                                >
+                                                    <EyeIcon size={18} />
+                                                </Link>
+
+                                                {/* Nút Sửa */}
                                                 <Link 
                                                     href={`/admin/category/${category.id}/edit`} 
                                                     className="text-indigo-600 hover:text-indigo-900 transition"
@@ -166,6 +176,8 @@ export default function CategoryPage() {
                                                 >
                                                     <EditIcon size={18} />
                                                 </Link>
+
+                                                {/* Nút Xóa */}
                                                 <button 
                                                     onClick={() => handleDelete(category.id)} 
                                                     className="text-red-400 hover:text-red-600 transition"
