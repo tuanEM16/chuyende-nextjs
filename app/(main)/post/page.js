@@ -2,64 +2,85 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import axios from 'axios';
+import PostService from '@/services/PostService';
 
-// Component Icon Lịch (Dùng SVG thay vì lucide-react để đồng bộ với các trang khác)
-const CalendarIcon = ({ size = 16, className = '' }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+// --- ICONS (SVG thuần để nhẹ web) ---
+const CalendarIcon = ({ className = '' }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
 );
 
+const ClockIcon = ({ size = 40, className = '' }) => (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+);
+
+const ArrowRightIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+);
+
+// --- COMPONENT CON: POST CARD ---
 const PostCard = ({ post }) => {
-    // Cấu hình URL ảnh (Thay 'product' bằng 'post' nếu bạn lưu ảnh bài viết ở folder khác)
-    const IMAGE_BASE_URL = 'http://127.0.0.1:8000/images/post/';
-
-    const getImageUrl = (filename) => {
-        if (!filename) return "https://placehold.co/600x400?text=No+Image";
-        if (filename.startsWith('http')) return filename;
-        return IMAGE_BASE_URL + filename;
-    };
-
-    // Format ngày tháng
+    // Format ngày tháng tiếng Việt
     const formatDate = (dateString) => {
         if (!dateString) return '';
-        return new Date(dateString).toLocaleDateString('vi-VN');
+        return new Date(dateString).toLocaleDateString('vi-VN', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden flex flex-col h-full border border-slate-100">
-            {/* Hình ảnh bài viết */}
-            <div className="h-48 overflow-hidden relative">
+        <article className="bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden border border-slate-100 flex flex-col h-full group">
+            {/* Hình ảnh Thumbnail */}
+            <Link href={`/post/${post.slug || post.id}`} className="block h-56 overflow-hidden relative bg-slate-100">
                 <img 
-                    src={getImageUrl(post.image)} 
+                    src={PostService.getImageUrl(post.image)} 
                     alt={post.title} 
-                    className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500"
-                    onError={(e) => { e.target.src = "https://placehold.co/600x400?text=Error"; }}
+                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+                    onError={(e) => { e.target.src = "https://placehold.co/600x400?text=No+Image"; }}
                 />
-            </div>
+                {/* Overlay nhẹ khi hover */}
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors duration-300"></div>
+            </Link>
 
-            <div className="p-6 flex flex-col flex-grow space-y-3">
-                <h2 className="text-xl font-bold text-slate-800 hover:text-indigo-600 transition duration-300 line-clamp-2">
-                    <Link href={`/post/${post.id}`}>{post.title}</Link>
-                </h2>
-                
-                <div className="flex items-center text-sm text-slate-500">
-                    <CalendarIcon className="mr-2" />
+            {/* Nội dung bài viết */}
+            <div className="p-6 flex flex-col flex-grow">
+                {/* Meta data: Ngày tháng */}
+                <div className="flex items-center gap-2 text-xs text-slate-500 mb-3 font-medium uppercase tracking-wider">
+                    <CalendarIcon className="text-indigo-500" />
                     <span>{formatDate(post.created_at)}</span>
                 </div>
+
+                {/* Tiêu đề */}
+                <h2 className="text-lg font-bold text-slate-800 mb-3 group-hover:text-indigo-600 transition-colors line-clamp-2 leading-tight">
+                    <Link href={`/post/${post.slug || post.id}`}>
+                        {post.title}
+                    </Link>
+                </h2>
                 
-                <p className="text-slate-600 flex-grow line-clamp-3 text-sm leading-relaxed">
-                    {post.description || post.summary || "Chưa có mô tả cho bài viết này."}
+                {/* Mô tả ngắn (Excerpt) */}
+                <p className="text-slate-600 text-sm leading-relaxed line-clamp-3 mb-6 flex-grow">
+                    {post.description || "Bài viết này chưa có mô tả ngắn. Hãy bấm vào để xem chi tiết nội dung..."}
                 </p>
                 
-                <Link href={`/post/${post.id}`} className="text-indigo-600 font-medium hover:text-indigo-800 pt-4 border-t border-slate-100 self-start w-full flex items-center">
-                    Đọc thêm 
-                    <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-                </Link>
+                {/* Nút Xem thêm */}
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between mt-auto">
+                    <Link 
+                        href={`/post/${post.slug || post.id}`} 
+                        className="text-indigo-600 font-bold text-sm hover:text-indigo-800 flex items-center gap-2 group/btn"
+                    >
+                        ĐỌC TIẾP 
+                        <span className="transform group-hover/btn:translate-x-1 transition-transform">
+                            <ArrowRightIcon />
+                        </span>
+                    </Link>
+                </div>
             </div>
-        </div>
+        </article>
     );
 };
 
+// --- COMPONENT CHÍNH: POST PAGE ---
 export default function PostPage() {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -67,14 +88,24 @@ export default function PostPage() {
     useEffect(() => {
         const fetchPosts = async () => {
             try {
-                // Gọi API lấy danh sách bài viết
-                const res = await axios.get('http://127.0.0.1:8000/api/post');
+                // Gọi API qua Service
+                const res = await PostService.index();
                 
-                if (res.data.success) {
-                    // Xử lý data trả về (paginate hoặc get)
-                    const dataSrc = res.data.data.data || res.data.data || [];
-                    setPosts(dataSrc);
+                // Xử lý dữ liệu trả về từ Laravel
+                // Laravel paginate trả về dạng: { data: { current_page: 1, data:Array[...] } }
+                // Nếu không paginate thì trả về: { data: Array[...] }
+                let dataList = [];
+                
+                if (res.data?.data?.data && Array.isArray(res.data.data.data)) {
+                    // Trường hợp có phân trang (Paginate)
+                    dataList = res.data.data.data;
+                } else if (res.data?.data && Array.isArray(res.data.data)) {
+                    // Trường hợp trả về mảng trực tiếp
+                    dataList = res.data.data;
                 }
+
+                setPosts(dataList);
+
             } catch (error) {
                 console.error("Lỗi tải bài viết:", error);
             } finally {
@@ -86,38 +117,59 @@ export default function PostPage() {
     }, []);
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 bg-slate-50 min-h-screen">
-            <h1 className="text-4xl font-extrabold text-slate-900 mb-8 border-b border-slate-200 pb-3">
-                Blog & Tin tức
-            </h1>
-
-            {loading ? (
-                // Skeleton Loading
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {[1, 2, 3].map((i) => (
-                        <div key={i} className="bg-white rounded-xl shadow p-4 h-96 animate-pulse">
-                            <div className="h-48 bg-slate-200 rounded mb-4"></div>
-                            <div className="h-6 bg-slate-200 rounded w-3/4 mb-2"></div>
-                            <div className="h-4 bg-slate-200 rounded w-1/2 mb-4"></div>
-                            <div className="h-20 bg-slate-200 rounded"></div>
-                        </div>
-                    ))}
+        <div className="min-h-screen bg-slate-50 py-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                {/* Header Section */}
+                <div className="text-center max-w-2xl mx-auto mb-16">
+                    <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-4">
+                        Tin tức & Sự kiện
+                    </h1>
+                    <p className="text-slate-500 text-lg">
+                        Cập nhật những thông tin mới nhất, kiến thức bổ ích và các thông báo quan trọng.
+                    </p>
+                    <div className="mt-4 w-24 h-1.5 bg-indigo-600 mx-auto rounded-full"></div>
                 </div>
-            ) : (
-                <>
+
+                {/* Content Section */}
+                {loading ? (
+                    // Hiệu ứng Loading (Skeleton)
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {posts.map((post) => (
-                            <PostCard key={post.id} post={post} />
+                        {[1, 2, 3, 4, 5, 6].map((i) => (
+                            <div key={i} className="bg-white rounded-2xl p-4 h-[450px] border border-slate-200 shadow-sm">
+                                <div className="h-48 bg-slate-200 rounded-xl mb-4 animate-pulse"></div>
+                                <div className="h-4 bg-slate-200 rounded w-1/3 mb-4 animate-pulse"></div>
+                                <div className="h-6 bg-slate-200 rounded w-3/4 mb-3 animate-pulse"></div>
+                                <div className="h-6 bg-slate-200 rounded w-1/2 mb-6 animate-pulse"></div>
+                                <div className="space-y-2">
+                                    <div className="h-3 bg-slate-200 rounded animate-pulse"></div>
+                                    <div className="h-3 bg-slate-200 rounded animate-pulse"></div>
+                                    <div className="h-3 bg-slate-200 rounded w-2/3 animate-pulse"></div>
+                                </div>
+                            </div>
                         ))}
                     </div>
-                    
-                    {posts.length === 0 && (
-                        <div className="text-center p-12 bg-white rounded-xl mt-8 shadow-sm">
-                            <p className="text-xl text-slate-500">Hiện chưa có bài viết nào được đăng.</p>
-                        </div>
-                    )}
-                </>
-            )}
+                ) : (
+                    <>
+                        {posts.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {posts.map((post) => (
+                                    <PostCard key={post.id} post={post} />
+                                ))}
+                            </div>
+                        ) : (
+                            // Giao diện khi không có bài viết
+                            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl shadow-sm border border-slate-200">
+                                <div className="p-4 rounded-full bg-slate-100 text-slate-400 mb-4">
+                                    <ClockIcon />
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-700">Chưa có bài viết nào</h3>
+                                <p className="text-slate-500 mt-2">Nội dung đang được cập nhật. Vui lòng quay lại sau!</p>
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
         </div>
     );
 }
