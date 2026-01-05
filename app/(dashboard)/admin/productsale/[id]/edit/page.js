@@ -19,7 +19,7 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
 
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
-    
+
     // Data nguồn
     const [productList, setProductList] = useState([]);
 
@@ -42,7 +42,7 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
     const formatDateTime = (dateString) => {
         if (!dateString) return '';
         const d = new Date(dateString);
-        if (isNaN(d.getTime())) return ''; 
+        if (isNaN(d.getTime())) return '';
         const pad = (n) => n < 10 ? '0' + n : n;
         return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
     };
@@ -53,27 +53,42 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
         const initData = async () => {
             try {
                 setFetching(true);
+
+                // 1. Lấy thông tin item hiện tại
                 const currentRes = await ProductSaleService.show(currentId);
                 const currentData = currentRes.data?.data || currentRes.data;
 
                 if (!currentData) throw new Error("Không tìm thấy thông tin khuyến mãi.");
 
-                const allSalesRes = await ProductSaleService.index();
-                const allSales = allSalesRes.data?.data || allSalesRes.data || [];
+                // --- KHẮC PHỤC LỖI MẤT DỮ LIỆU KHI PHÂN TRANG ---
 
-                const prodRes = await ProductService.index();
-                const products = prodRes.data?.data || prodRes.data || [];
+                // 2. Lấy TOÀN BỘ danh sách khuyến mãi (thêm limit lớn)
+                // Thay vì chỉ lấy 20 dòng mặc định, ta lấy 2000 dòng để chắc chắn lấy hết các "anh em"
+                const allSalesRes = await ProductSaleService.index({ limit: 2000 });
+
+                // Xử lý lấy mảng data từ cấu trúc phân trang (Laravel Paginate)
+                // Cấu trúc thường gặp: res.data.data.data (nếu có phân trang) HOẶC res.data.data (nếu không phân trang)
+                const allSalesData = allSalesRes.data?.data;
+                const allSales = Array.isArray(allSalesData) ? allSalesData : (allSalesData?.data || []);
+
+                // 3. Lấy TOÀN BỘ sản phẩm (để hiển thị tên, ảnh đúng)
+                const prodRes = await ProductService.index({ limit: 2000 });
+                const prodData = prodRes.data?.data;
+                const products = Array.isArray(prodData) ? prodData : (prodData?.data || []);
+
                 setProductList(products);
 
-                // Lọc ra các item cùng chiến dịch
-                const siblings = allSales.filter(item => 
-                    item.name === currentData.name && 
-                    item.date_begin === currentData.date_begin && 
+                // 4. Lọc ra các item "anh em" cùng chiến dịch (Client-side filtering)
+                const siblings = allSales.filter(item =>
+                    item.name === currentData.name &&
+                    item.date_begin === currentData.date_begin &&
                     item.date_end === currentData.date_end
                 );
 
+                // Nếu tìm thấy anh em thì dùng danh sách đó, nếu không thì dùng chính nó
                 const targetItems = siblings.length > 0 ? siblings : [currentData];
 
+                // 5. Setup Form
                 setCampaignInfo({
                     name: currentData.name,
                     date_begin: formatDateTime(currentData.date_begin),
@@ -81,17 +96,18 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
                     status: currentData.status ?? 1
                 });
 
+                // 6. Map dữ liệu
                 const mappedItems = targetItems.map(item => {
                     const prod = products.find(p => String(p.id) === String(item.product_id));
                     return {
-                        id: item.id, 
+                        id: item.id,
                         product_id: item.product_id,
                         product_name: prod ? prod.name : `Sản phẩm #${item.product_id}`,
                         product_price_buy: prod ? prod.price_buy : 0,
                         product_thumbnail: prod ? prod.thumbnail : null,
                         price_sale: item.price_sale,
-                        sku: prod ? prod.id : 'N/A', // Thêm SKU để hiển thị giống mẫu
-                        is_deleted: false 
+                        sku: prod ? prod.id : 'N/A',
+                        is_deleted: false
                     };
                 });
 
@@ -99,7 +115,7 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
 
             } catch (error) {
                 console.error("Lỗi tải dữ liệu:", error);
-                alert("Có lỗi xảy ra khi tải dữ liệu.");
+                // alert("Có lỗi xảy ra khi tải dữ liệu.");
             } finally {
                 setFetching(false);
             }
@@ -107,7 +123,6 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
 
         initData();
     }, [currentId]);
-
     const handleCampaignChange = (e) => {
         const { name, value } = e.target;
         setCampaignInfo(prev => ({ ...prev, [name]: value }));
@@ -120,7 +135,7 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
     };
 
     const handleRemoveItem = (index) => {
-        if(confirm("Bạn muốn loại sản phẩm này khỏi đợt khuyến mãi?")) {
+        if (confirm("Bạn muốn loại sản phẩm này khỏi đợt khuyến mãi?")) {
             const newItems = [...saleItems];
             newItems[index].is_deleted = true;
             setSaleItems(newItems);
@@ -131,20 +146,20 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
     const applyQuickSettings = () => {
         const updatedList = saleItems.map(item => {
             if (item.is_deleted) return item;
-            
+
             const original = Number(item.product_price_buy);
             let sale = 0;
-            
+
             if (quickType === 'percent') {
                 sale = original * (100 - quickValue) / 100;
             } else {
                 sale = original - quickValue;
             }
-            
+
             if (sale < 0) sale = 0;
             return { ...item, price_sale: Math.round(sale) };
         });
-        
+
         setSaleItems(updatedList);
     };
 
@@ -193,7 +208,7 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
 
     // Tính tổng doanh thu giảm dự kiến
     const totalReduction = saleItems.reduce((acc, item) => {
-        if(item.is_deleted) return acc;
+        if (item.is_deleted) return acc;
         const sale = Number(item.price_sale);
         const original = Number(item.product_price_buy);
         return acc + (original - sale);
@@ -211,19 +226,19 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
             </div>
 
             <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
+
                 {/* --- CỘT TRÁI: THỜI GIAN ÁP DỤNG (Giống giao diện Add) --- */}
                 <div className="space-y-6">
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky top-6">
                         <div className="flex items-center gap-2 mb-4 text-orange-600 font-bold border-b pb-2">
                             <ClockIcon /> THỜI GIAN ÁP DỤNG
                         </div>
-                        
+
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 mb-1">Tên chương trình</label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     className="w-full border p-2 rounded focus:ring-2 ring-orange-200 outline-none"
                                     value={campaignInfo.name}
                                     onChange={handleCampaignChange}
@@ -233,8 +248,8 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-600 mb-1">Thời gian bắt đầu</label>
-                                <input 
-                                    type="datetime-local" 
+                                <input
+                                    type="datetime-local"
                                     className="w-full border p-2 rounded focus:outline-none focus:border-orange-500"
                                     value={campaignInfo.date_begin}
                                     onChange={handleCampaignChange}
@@ -244,8 +259,8 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-600 mb-1">Thời gian kết thúc</label>
-                                <input 
-                                    type="datetime-local" 
+                                <input
+                                    type="datetime-local"
                                     className="w-full border p-2 rounded focus:outline-none focus:border-orange-500"
                                     value={campaignInfo.date_end}
                                     onChange={handleCampaignChange}
@@ -287,7 +302,7 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
                         {/* --- THANH THIẾT LẬP NHANH (Giống trang Add) --- */}
                         <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-wrap items-center gap-3 mb-6">
                             <span className="text-sm font-bold text-slate-600 uppercase">Thiết lập nhanh:</span>
-                            <select 
+                            <select
                                 className="border p-1.5 rounded text-sm outline-none"
                                 value={quickType}
                                 onChange={e => setQuickType(e.target.value)}
@@ -295,13 +310,13 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
                                 <option value="percent">Giảm theo %</option>
                                 <option value="amount">Giảm tiền</option>
                             </select>
-                            <input 
-                                type="number" 
+                            <input
+                                type="number"
                                 className="w-20 border p-1.5 rounded text-sm outline-none"
                                 value={quickValue}
                                 onChange={e => setQuickValue(e.target.value)}
                             />
-                            <button 
+                            <button
                                 type="button" // Quan trọng để ko submit form
                                 onClick={applyQuickSettings}
                                 className="text-sm text-red-600 font-bold hover:underline"
@@ -314,7 +329,7 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
                         <div className="space-y-4">
                             {saleItems.map((p, index) => {
                                 if (p.is_deleted) return null;
-                                
+
                                 const original = Number(p.product_price_buy);
                                 const sale = Number(p.price_sale || original);
                                 const percent = original > 0 ? Math.round(((original - sale) / original) * 100) : 0;
@@ -338,8 +353,8 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
                                             <div className="text-right">
                                                 <p className="text-xs text-red-500 font-bold mb-1">GIÁ KHUYẾN MÃI</p>
                                                 <div className="flex items-center gap-2">
-                                                    <input 
-                                                        type="number" 
+                                                    <input
+                                                        type="number"
                                                         className="w-28 border border-red-200 p-1.5 rounded text-right font-bold text-red-600 outline-none focus:border-red-500"
                                                         value={p.price_sale}
                                                         placeholder="0"
@@ -351,9 +366,9 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
                                                 </div>
                                             </div>
 
-                                            <button 
+                                            <button
                                                 type="button"
-                                                onClick={() => handleRemoveItem(index)} 
+                                                onClick={() => handleRemoveItem(index)}
                                                 className="text-slate-300 hover:text-red-500 p-2"
                                                 title="Loại khỏi đợt này"
                                             >
@@ -381,7 +396,7 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
                         )}
                     </div>
 
-                    <button 
+                    <button
                         onClick={handleSubmit}
                         disabled={loading || saleItems.filter(i => !i.is_deleted).length === 0}
                         className={`w-full bg-red-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-red-700 transition flex items-center justify-center gap-2 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}

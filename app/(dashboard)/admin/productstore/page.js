@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ProductStoreService from '@/services/ProductStoreService';
 import ProductService from '@/services/ProductService';
 
-// --- ICONS ĐÃ SỬA LỖI --
+// --- ICONS (Đã chuẩn hóa JSX) ---
 const PlusIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
 const SearchIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
-// Sửa lỗi ở dòng này (bỏ </path> dư thừa)
 const TrashIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
 const EditIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
 const EyeIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>;
@@ -24,8 +23,14 @@ export default function InventoryPage() {
 
     const loadHistory = async () => {
         try {
+            setLoading(true);
             const res = await ProductStoreService.index();
-            if (res.success) setHistory(res.data);
+            
+            if (res.data && res.data.success) {
+                // Xử lý an toàn: API có thể trả về mảng hoặc object phân trang
+                const list = Array.isArray(res.data.data) ? res.data.data : (res.data.data?.data || []);
+                setHistory(list);
+            }
         } catch (error) {
             console.error("Lỗi tải dữ liệu:", error);
         } finally {
@@ -37,15 +42,18 @@ export default function InventoryPage() {
         if(confirm('Bạn có chắc muốn xóa phiếu nhập này?')) {
             try {
                 await ProductStoreService.destroy(id);
+                // Cập nhật giao diện ngay lập tức
                 setHistory(prev => prev.filter(item => item.id !== id));
             } catch (error) {
-                alert('Xóa thất bại');
+                alert('Xóa thất bại: ' + (error.message || 'Lỗi server'));
             }
         }
     };
 
+    // Filter client-side
     const filteredHistory = history.filter(item => 
-        item.product?.name.toLowerCase().includes(searchTerm.toLowerCase())
+        item.product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        String(item.id).includes(searchTerm)
     );
 
     return (
@@ -60,12 +68,13 @@ export default function InventoryPage() {
                 </Link>
             </div>
 
+            {/* Thanh tìm kiếm */}
             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
                 <div className="relative flex-1 max-w-md">
                     <span className="absolute left-3 top-2.5 text-slate-400"><SearchIcon /></span>
                     <input 
                         type="text" 
-                        placeholder="Tìm kiếm phiếu nhập..." 
+                        placeholder="Tìm theo tên SP hoặc mã phiếu..." 
                         className="w-full pl-10 pr-4 py-2 border rounded-lg outline-none focus:border-indigo-500"
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
@@ -73,6 +82,7 @@ export default function InventoryPage() {
                 </div>
             </div>
 
+            {/* Bảng dữ liệu */}
             <div className="bg-white rounded-xl shadow border border-slate-200 overflow-hidden">
                 <table className="min-w-full divide-y divide-slate-200">
                     <thead className="bg-slate-50">
@@ -88,27 +98,43 @@ export default function InventoryPage() {
                         {loading ? (
                             <tr><td colSpan="5" className="p-10 text-center text-slate-400">Đang tải dữ liệu...</td></tr>
                         ) : filteredHistory.length > 0 ? filteredHistory.map((item) => (
-                            <tr key={item.id} className="hover:bg-slate-50">
+                            <tr key={item.id} className="hover:bg-slate-50 transition">
                                 <td className="px-6 py-4 flex items-center gap-3">
-                                    <img src={ProductService.getImageUrl(item.product?.thumbnail)} className="w-10 h-10 rounded object-cover border" />
+                                    <img 
+                                        src={ProductService.getImageUrl(item.product?.thumbnail)} 
+                                        className="w-10 h-10 rounded object-cover border bg-slate-50" 
+                                        alt=""
+                                        onError={(e) => e.target.src = "https://placehold.co/50x50?text=IMG"}
+                                    />
                                     <div>
-                                        <div className="font-medium text-slate-700">{item.product?.name}</div>
-                                        <div className="text-xs text-slate-400">Mã nhập: #{item.id}</div>
+                                        <div className="font-medium text-slate-700">{item.product?.name || 'Sản phẩm đã xóa'}</div>
+                                        <div className="text-xs text-slate-400">Mã phiếu: #{item.id}</div>
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 text-right font-medium">{Number(item.price_root).toLocaleString()}đ</td>
                                 <td className="px-6 py-4 text-center font-bold text-blue-600">+{item.qty}</td>
-                                <td className="px-6 py-4 text-right font-bold">{(item.price_root * item.qty).toLocaleString()}đ</td>
+                                <td className="px-6 py-4 text-right font-bold text-slate-700">{(item.price_root * item.qty).toLocaleString()}đ</td>
                                 <td className="px-6 py-4 text-center">
                                     <div className="flex justify-center gap-2">
-                                        <Link href={`/admin/productstore/${item.id}/show`}className="text-blue-500 hover:bg-blue-50 p-2 rounded" title="Xem chi tiết"><EyeIcon /></Link>
-                                        <Link href={`/admin/productstore/${item.id}/edit`} className="text-indigo-600 hover:bg-indigo-50 p-2 rounded" title="Sửa"><EditIcon /></Link>
-                                        <button onClick={() => handleDelete(item.id)} className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded" title="Xóa"><TrashIcon /></button>
+                                        {/* Nút Xem (Show) */}
+                                        <Link href={`/admin/productstore/${item.id}/show`} className="text-blue-500 hover:bg-blue-50 p-2 rounded transition" title="Xem chi tiết">
+                                            <EyeIcon />
+                                        </Link>
+                                        
+                                        {/* Nút Sửa (Edit) */}
+                                        <Link href={`/admin/productstore/${item.id}/edit`} className="text-indigo-600 hover:bg-indigo-50 p-2 rounded transition" title="Sửa">
+                                            <EditIcon />
+                                        </Link>
+                                        
+                                        {/* Nút Xóa (Delete) */}
+                                        <button onClick={() => handleDelete(item.id)} className="text-red-400 hover:text-red-600 hover:bg-red-50 p-2 rounded transition" title="Xóa">
+                                            <TrashIcon />
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
                         )) : (
-                            <tr><td colSpan="5" className="p-10 text-center text-slate-400 italic">Chưa có dữ liệu nhập kho.</td></tr>
+                            <tr><td colSpan="5" className="p-10 text-center text-slate-400 italic">Chưa có dữ liệu nhập kho nào.</td></tr>
                         )}
                     </tbody>
                 </table>

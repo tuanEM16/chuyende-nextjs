@@ -11,6 +11,7 @@ const TrashIcon = () => <svg width="18" height="18" fill="none" stroke="currentC
 
 export default function MenuListPage() {
     const [menus, setMenus] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         loadData();
@@ -18,17 +19,32 @@ export default function MenuListPage() {
 
     const loadData = async () => {
         try {
-            const res = await MenuService.index();
-            if (res.success) setMenus(res.data || []);
+            setLoading(true);
+            // Thêm limit để lấy toàn bộ menu (tránh bị phân trang mặc định 20 dòng)
+            const res = await MenuService.index({ limit: 1000 });
+            
+            // 👇 Kiểm tra an toàn dữ liệu
+            if (res.data && res.data.success) {
+                // Lấy mảng từ cấu trúc phân trang (data.data.data) hoặc mảng thường (data.data)
+                const list = res.data.data?.data || res.data.data || [];
+                setMenus(list);
+            }
         } catch (error) {
-            console.error(error);
+            console.error("Lỗi tải menu:", error);
+        } finally {
+            setLoading(false);
         }
     };
 
     const handleDelete = async (id) => {
-        if(confirm("Xóa menu này?")) {
-            await MenuService.destroy(id);
-            loadData();
+        if(confirm("Bạn có chắc muốn xóa menu này?")) {
+            try {
+                await MenuService.destroy(id);
+                // Cập nhật giao diện ngay lập tức mà không cần gọi lại API
+                setMenus(prev => prev.filter(item => item.id !== id));
+            } catch (error) {
+                alert("Xóa thất bại: " + (error.message || "Lỗi server"));
+            }
         }
     };
 
@@ -36,44 +52,56 @@ export default function MenuListPage() {
         <div className="p-6 space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold text-slate-800">Quản lý Menu</h1>
-                <Link href="/admin/menu/add" className="flex items-center space-x-2 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+                <Link href="/admin/menu/add" className="flex items-center space-x-2 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition shadow">
                     <PlusIcon /> <span>Thêm Menu</span>
                 </Link>
             </div>
 
-            <div className="bg-white rounded shadow overflow-hidden">
+            <div className="bg-white rounded-xl shadow overflow-hidden border border-slate-200">
                 <table className="min-w-full divide-y divide-slate-200">
                     <thead className="bg-slate-50">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tên Menu</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Liên kết</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vị trí</th>
-                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Thứ tự</th>
-                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
-                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Hành động</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Tên Menu</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Liên kết</th>
+                            <th className="px-6 py-4 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Vị trí</th>
+                            <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Thứ tự</th>
+                            <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Trạng thái</th>
+                            <th className="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase tracking-wider">Hành động</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
-                        {menus.map((item) => (
-                            <tr key={item.id} className="hover:bg-slate-50">
-                                <td className="px-6 py-4 font-medium text-slate-900">{item.name}</td>
-                                <td className="px-6 py-4 text-sm text-blue-600">{item.link}</td>
-                                <td className="px-6 py-4 text-sm capitalize">{item.position}</td>
-                                <td className="px-6 py-4 text-center text-sm">{item.sort_order}</td>
-                                <td className="px-6 py-4 text-center">
-                                    {item.status === 1 ? 
-                                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">Hiện</span> : 
-                                        <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs">Ẩn</span>
-                                    }
-                                </td>
-                                <td className="px-6 py-4 text-center">
-                                    <div className="flex justify-center space-x-3">
-                                        <Link href={`/admin/menu/${item.id}/edit`} className="text-indigo-600 hover:text-indigo-900"><EditIcon/></Link>
-                                        <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:text-red-900"><TrashIcon/></button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
+                        {loading ? (
+                            <tr><td colSpan="6" className="text-center py-10 text-slate-500 italic">Đang tải dữ liệu...</td></tr>
+                        ) : menus.length > 0 ? (
+                            menus.map((item) => (
+                                <tr key={item.id} className="hover:bg-slate-50 transition">
+                                    <td className="px-6 py-4 font-medium text-slate-900">{item.name}</td>
+                                    <td className="px-6 py-4 text-sm text-blue-600 hover:underline truncate max-w-xs" title={item.link}>
+                                        {item.link}
+                                    </td>
+                                    <td className="px-6 py-4 text-sm capitalize text-slate-600">{item.position}</td>
+                                    <td className="px-6 py-4 text-center text-sm font-semibold">{item.sort_order}</td>
+                                    <td className="px-6 py-4 text-center">
+                                        {item.status === 1 ? 
+                                            <span className="px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200">Hiện</span> : 
+                                            <span className="px-2.5 py-1 bg-red-100 text-red-700 rounded-full text-xs font-bold border border-red-200">Ẩn</span>
+                                        }
+                                    </td>
+                                    <td className="px-6 py-4 text-center">
+                                        <div className="flex justify-center space-x-3">
+                                            <Link href={`/admin/menu/${item.id}/edit`} className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 p-2 rounded hover:bg-indigo-100 transition" title="Sửa">
+                                                <EditIcon/>
+                                            </Link>
+                                            <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:text-red-900 bg-red-50 p-2 rounded hover:bg-red-100 transition" title="Xóa">
+                                                <TrashIcon/>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr><td colSpan="6" className="text-center py-10 text-slate-500">Chưa có menu nào.</td></tr>
+                        )}
                     </tbody>
                 </table>
             </div>

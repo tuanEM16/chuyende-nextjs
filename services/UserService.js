@@ -1,6 +1,23 @@
 import httpAxios from './httpAxios';
 
 const UserService = {
+    // AUTH
+    login: async (email, password) => {
+        return await httpAxios.post('login', { email, password });
+    },
+    
+    register: async (data) => {
+        return await httpAxios.post('register', data);
+    },
+
+    logout: async () => {
+        return await httpAxios.post('logout');
+    },
+
+    getProfile: async () => {
+        return await httpAxios.get('profile');
+    },
+    /////////////
     index: async () => {
         return await httpAxios.get('user');
     },

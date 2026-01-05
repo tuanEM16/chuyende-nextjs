@@ -51,12 +51,19 @@ export default function EditInventoryBulkPage({ params: paramsPromise }) {
                 if (!currentData) throw new Error("Không tìm thấy phiếu nhập.");
 
                 // 2. Lấy tất cả phiếu nhập (để lọc cùng đợt)
-                const allStoreRes = await ProductStoreService.index();
-                const allStores = allStoreRes.data?.data || allStoreRes.data || [];
+                // Cần lấy số lượng lớn để bypass phân trang
+                const allStoreRes = await ProductStoreService.index({ limit: 2000 });
+                // Xử lý an toàn: API có thể trả về mảng hoặc object phân trang
+                const allStores = Array.isArray(allStoreRes.data?.data) 
+                    ? allStoreRes.data.data 
+                    : (allStoreRes.data?.data?.data || []);
 
                 // 3. Lấy thông tin sản phẩm (để hiện tên, hình ảnh)
-                const prodRes = await ProductService.index();
-                const products = prodRes.data?.data || prodRes.data || [];
+                // Cần lấy số lượng lớn để tìm thấy sản phẩm
+                const prodRes = await ProductService.index({ limit: 2000 });
+                const products = Array.isArray(prodRes.data?.data) 
+                    ? prodRes.data.data 
+                    : (prodRes.data?.data?.data || []);
 
                 // 4. Lọc ra các phiếu nhập CÙNG THỜI GIAN (created_at)
                 // Lưu ý: Cần so sánh chính xác chuỗi thời gian từ DB
@@ -88,7 +95,7 @@ export default function EditInventoryBulkPage({ params: paramsPromise }) {
 
             } catch (error) {
                 console.error("Lỗi tải dữ liệu:", error);
-                alert("Có lỗi xảy ra khi tải dữ liệu.");
+                // alert("Có lỗi xảy ra khi tải dữ liệu.");
             } finally {
                 setFetching(false);
             }

@@ -11,22 +11,24 @@ export default function OrderPage() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
+useEffect(() => {
         const fetchOrders = async () => {
             try {
-                const res = await OrderService.index();
-                if (res.success) {
-                    setOrders(res.data.data || res.data || []); 
+                const res = await OrderService.index({ limit: 100 }); 
+                
+                if (res.data && res.data.success) {
+                    const orderList = res.data.data?.data || res.data.data || [];
+                    
+                    setOrders(orderList);
                 }
             } catch (error) {
-                console.error(error);
+                console.error("Lỗi tải đơn hàng:", error);
             } finally {
                 setLoading(false);
             }
         };
         fetchOrders();
     }, []);
-
     const getStatusLabel = (status) => {
         switch(status) {
             case 1: return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-bold">Mới</span>;

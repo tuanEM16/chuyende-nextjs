@@ -17,16 +17,24 @@ export default function BulkImportPage() {
     const [allProducts, setAllProducts] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [showSuggestions, setShowSuggestions] = useState(false);
-    
-    // Danh sách sản phẩm đang nhập (Cart)
+
     const [importList, setImportList] = useState([]);
     const [loading, setLoading] = useState(false);
-
-    // 1. Load danh sách sản phẩm nguồn để tìm kiếm
     useEffect(() => {
-        ProductService.index().then(res => {
-            if (res.data) setAllProducts(res.data.data || res.data);
-        });
+        const fetchData = async () => {
+            try {
+                const res = await ProductService.index({ limit: 2000 });
+
+                if (res.data && res.data.success) {
+                    const list = res.data.data?.data || [];
+
+                    setAllProducts(list);
+                }
+            } catch (error) {
+                console.error("Lỗi tải sản phẩm:", error);
+            }
+        };
+        fetchData();
     }, []);
 
     // 2. Xử lý thêm sản phẩm vào bảng
@@ -50,7 +58,7 @@ export default function BulkImportPage() {
 
     // 3. Xử lý thay đổi input trên bảng
     const updateItem = (id, field, value) => {
-        setImportList(prev => prev.map(item => 
+        setImportList(prev => prev.map(item =>
             item.id === id ? { ...item, [field]: value } : item
         ));
     };
@@ -62,8 +70,8 @@ export default function BulkImportPage() {
 
     // 5. Submit Lưu Kho
     const handleSave = async () => {
-        if(importList.length === 0) return alert("Chưa có sản phẩm nào!");
-        
+        if (importList.length === 0) return alert("Chưa có sản phẩm nào!");
+
         // Validate dữ liệu
         const invalidItem = importList.find(item => item.importQty <= 0 || item.importPrice < 0);
         if (invalidItem) {
@@ -97,13 +105,13 @@ export default function BulkImportPage() {
     };
 
     // Filter tìm kiếm
-    const filteredSuggestions = allProducts.filter(p => 
+    const filteredSuggestions = allProducts.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
         <div className="p-6 max-w-[1400px] mx-auto space-y-6">
-            
+
             {/* Header */}
             <div className="flex justify-between items-center mb-4">
                 <h1 className="text-3xl font-bold text-slate-800">Tạo Phiếu Nhập Kho</h1>
@@ -116,9 +124,9 @@ export default function BulkImportPage() {
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 relative z-50">
                 <div className="flex items-center gap-3 w-full border rounded-lg px-4 py-3 bg-slate-50 focus-within:bg-white focus-within:ring-2 ring-indigo-100 transition">
                     <SearchIcon />
-                    <input 
-                        type="text" 
-                        placeholder="Tìm kiếm sản phẩm theo tên, mã SKU để thêm vào phiếu nhập..." 
+                    <input
+                        type="text"
+                        placeholder="Tìm kiếm sản phẩm theo tên, mã SKU để thêm vào phiếu nhập..."
                         className="flex-1 bg-transparent outline-none text-slate-700 placeholder:text-slate-400"
                         value={searchTerm}
                         onChange={e => { setSearchTerm(e.target.value); setShowSuggestions(true); }}
@@ -131,8 +139,8 @@ export default function BulkImportPage() {
                 {showSuggestions && searchTerm && (
                     <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl max-h-80 overflow-y-auto animate-fadeIn">
                         {filteredSuggestions.map(p => (
-                            <div 
-                                key={p.id} 
+                            <div
+                                key={p.id}
                                 onClick={() => addToImportList(p)}
                                 className="p-3 hover:bg-indigo-50 cursor-pointer flex items-center gap-3 border-b last:border-0 group"
                             >
@@ -190,8 +198,8 @@ export default function BulkImportPage() {
                                         {item.unit || 'Cái'}
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        <input 
-                                            type="number" 
+                                        <input
+                                            type="number"
                                             className="w-full border border-slate-300 rounded px-3 py-2 text-center font-bold focus:ring-2 ring-indigo-200 outline-none text-indigo-600"
                                             value={item.importQty}
                                             onChange={e => updateItem(item.id, 'importQty', e.target.value)}
@@ -200,8 +208,8 @@ export default function BulkImportPage() {
                                         <p className="text-[10px] text-slate-400 mt-1">Trong kho: {item.qty || 0}</p>
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        <input 
-                                            type="number" 
+                                        <input
+                                            type="number"
                                             className="w-full border border-slate-300 rounded px-3 py-2 text-right font-medium focus:ring-2 ring-indigo-200 outline-none"
                                             value={item.importPrice}
                                             onChange={e => updateItem(item.id, 'importPrice', e.target.value)}
@@ -230,7 +238,7 @@ export default function BulkImportPage() {
                         )}
                     </tbody>
                 </table>
-                
+
                 {/* Footer Actions */}
                 <div className="mt-auto bg-slate-50 border-t border-slate-200 p-6 flex justify-end items-center">
                     <div className="flex gap-8 items-center">
@@ -246,7 +254,7 @@ export default function BulkImportPage() {
                                 {importList.reduce((sum, item) => sum + (item.importQty * item.importPrice), 0).toLocaleString()} ₫
                             </p>
                         </div>
-                        <button 
+                        <button
                             onClick={handleSave}
                             disabled={loading || importList.length === 0}
                             className={`bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg flex items-center gap-2 transition ${loading || importList.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}

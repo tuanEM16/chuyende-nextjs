@@ -7,9 +7,15 @@ const httpAxios = axios.create({
     },
 });
 
-httpAxios.interceptors.response.use(
-    (response) => {
-        return response.data; 
+httpAxios.interceptors.request.use(
+    (config) => {
+        const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        
+        return config;
     },
     (error) => {
         return Promise.reject(error);

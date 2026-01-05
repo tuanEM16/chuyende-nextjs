@@ -16,19 +16,31 @@ export default function ConfigPage() {
     });
     const [loading, setLoading] = useState(false);
 
-    // Load thông tin khi vào trang
     useEffect(() => {
-        ConfigService.getConfig().then(res => {
-            if (res.success && res.data) {
-                setForm({
-                    site_name: res.data.site_name || '',
-                    email: res.data.email || '',
-                    phone: res.data.phone || '',
-                    hotline: res.data.hotline || '',
-                    address: res.data.address || ''
-                });
+        const fetchConfig = async () => {
+            try {
+                const res = await ConfigService.getConfig();
+
+                // 👇 SỬA LẠI: Phải chọc vào res.data trước
+                if (res.data && res.data.success) {
+
+                    // Lấy dữ liệu thật (thường nằm ở res.data.data)
+                    const configData = res.data.data || {};
+
+                    setForm({
+                        site_name: configData.site_name || '',
+                        email: configData.email || '',
+                        phone: configData.phone || '',
+                        hotline: configData.hotline || '',
+                        address: configData.address || ''
+                    });
+                }
+            } catch (error) {
+                console.error("Lỗi tải cấu hình:", error);
             }
-        });
+        };
+
+        fetchConfig();
     }, []);
 
     const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -50,7 +62,7 @@ export default function ConfigPage() {
     return (
         <div className="max-w-4xl mx-auto p-6">
             <h1 className="text-3xl font-bold text-slate-800 mb-6">Cấu hình Website</h1>
-            
+
             <form onSubmit={handleSubmit} className="bg-white p-8 rounded-xl shadow border border-slate-200 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
@@ -77,8 +89,8 @@ export default function ConfigPage() {
                 </div>
 
                 <div className="pt-4 border-t">
-                    <button 
-                        type="submit" 
+                    <button
+                        type="submit"
                         disabled={loading}
                         className="flex items-center justify-center space-x-2 bg-indigo-600 text-white px-6 py-2.5 rounded hover:bg-indigo-700 font-medium w-full md:w-auto shadow-md"
                     >

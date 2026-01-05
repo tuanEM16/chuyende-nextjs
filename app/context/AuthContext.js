@@ -1,83 +1,68 @@
 'use client';
-
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import UserService from '@/services/UserService'; // Import Service bạn đã tạo
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
-    const [isLoading, setIsLoading] = useState(true);
     const router = useRouter();
 
-    // Kiểm tra đăng nhập khi tải trang (Persist login)
+    // Load user từ localStorage khi F5 trang
     useEffect(() => {
+        const token = localStorage.getItem('accessToken');
         const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            try {
-                setUser(JSON.parse(storedUser));
-            } catch (error) {
-                console.error("Lỗi phân tích dữ liệu user:", error);
-                localStorage.removeItem('user');
-            }
+        if (token && storedUser) {
+            setUser(JSON.parse(storedUser));
         }
-        setIsLoading(false);
     }, []);
 
-    // Hàm Đăng nhập giả lập
-    const login = (email, password) => {
-        console.log("Đang thử đăng nhập với:", email, password);
+    // HÀM LOGIN GỌI API
+    const login = async (email, password) => {
+        try {
+            // Gọi API Login
+            const res = await UserService.login(email, password);
 
-        if (email === 'admin@gmail.com' && password === 'admin123') {
-            const userData = {
-                id: 1,
-                name: 'Admin User',
-                email: 'admin@gmail.com',
-                role: 'admin', // Role admin
-                avatar: 'https://i.pravatar.cc/150?u=admin'
+            if (res.data.success) {
+                const { access_token, data } = res.data;
+
+                // 1. Lưu Token và Info vào LocalStorage
+                localStorage.setItem('accessToken', access_token);
+                localStorage.setItem('user', JSON.stringify(data));
+
+                // 2. Cập nhật State
+                setUser(data);
+
+                // 3. Trả về kết quả cho trang Login xử lý chuyển hướng
+                return { success: true, role: data.roles };
+            }
+        } catch (error) {
+            console.error("Login Failed:", error);
+            // Trả về lỗi từ Backend (nếu có)
+            return { 
+                success: false, 
+                message: error.response?.data?.message || 'Đăng nhập thất bại' 
             };
-            setUser(userData);
-            localStorage.setItem('user', JSON.stringify(userData));
-            // TRẢ VỀ ROLE ĐỂ XỬ LÝ REDIRECT
-            return { success: true, role: 'admin' }; 
-        } 
-        
-        if (email === 'user@gmail.com' && password === '123456') {
-             const userData = {
-                id: 2,
-                name: 'Khách hàng A',
-                email: 'user@gmail.com',
-                role: 'user', // Role user
-                avatar: 'https://i.pravatar.cc/150?u=user'
-            };
-            setUser(userData);
-            localStorage.setItem('user', JSON.stringify(userData));
-            // TRẢ VỀ ROLE ĐỂ XỬ LÝ REDIRECT
-            return { success: true, role: 'user' };
         }
-
-        return { success: false, message: 'Email hoặc mật khẩu không đúng!' };
     };
 
-    // Hàm Đăng xuất
+    // HÀM LOGOUT
     const logout = () => {
-        console.log("Đang đăng xuất...");
-        setUser(null);
+        // Gọi API Logout (không bắt buộc await nếu muốn nhanh)
+        UserService.logout().catch(err => console.log(err));
+        
+        localStorage.removeItem('accessToken');
         localStorage.removeItem('user');
-        router.push('/login'); 
+        setUser(null);
+        router.push('/login');
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+        <AuthContext.Provider value={{ user, login, logout }}>
             {children}
         </AuthContext.Provider>
     );
 };
 
-export const useAuth = () => {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error("useAuth phải được sử dụng bên trong AuthProvider");
-    }
-    return context;
-};
+export const useAuth = () => useContext(AuthContext);

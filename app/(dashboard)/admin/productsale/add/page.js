@@ -16,35 +16,33 @@ const CloseIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="no
 export default function AddProductSalePage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
-    
-    // Data
-    const [allProducts, setAllProducts] = useState([]); // Tất cả SP từ API
-    const [selectedProducts, setSelectedProducts] = useState([]); // Danh sách SP ĐÃ CHỌN để sale
+
+    const [allProducts, setAllProducts] = useState([]);
+    const [selectedProducts, setSelectedProducts] = useState([]);
 
     // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [tempSelectedIds, setTempSelectedIds] = useState([]); // ID được tích trong Modal (chưa bấm xác nhận)
+    const [tempSelectedIds, setTempSelectedIds] = useState([]);
 
     // Form Info
     const [campaign, setCampaign] = useState({ name: '', date_begin: '', date_end: '' });
-    
+
     // Quick Setup (Thiết lập nhanh)
     const [quickValue, setQuickValue] = useState(20);
     const [quickType, setQuickType] = useState('percent');
 
-    // 1. Load All Products
     useEffect(() => {
         ProductService.index().then(res => {
-            if (res.data?.data || Array.isArray(res.data)) {
-                setAllProducts(res.data.data || res.data);
+            if (res.data && res.data.success) {
+                const productList = res.data.data?.data || [];
+                setAllProducts(productList);
             }
-        });
+        }).catch(err => console.log(err));
     }, []);
 
-    // --- LOGIC MODAL ---
     const openModal = () => {
-        setTempSelectedIds(selectedProducts.map(p => p.id)); // Load lại các ID đã chọn trước đó
+        setTempSelectedIds(selectedProducts.map(p => p.id));
         setIsModalOpen(true);
     };
 
@@ -71,7 +69,7 @@ export default function AddProductSalePage() {
     const confirmSelection = () => {
         // Lọc ra các object sản phẩm từ mảng ID
         const newSelectedProducts = allProducts.filter(p => tempSelectedIds.includes(p.id));
-        
+
         // Map sang cấu trúc có thêm field price_sale (nếu chưa có thì mặc định)
         const productsWithPrice = newSelectedProducts.map(p => {
             // Nếu SP này đã có trong danh sách cũ thì giữ nguyên giá sale cũ
@@ -89,7 +87,7 @@ export default function AddProductSalePage() {
     };
 
     const updateSalePrice = (id, newPrice) => {
-        setSelectedProducts(prev => prev.map(p => 
+        setSelectedProducts(prev => prev.map(p =>
             p.id === id ? { ...p, price_sale: newPrice } : p
         ));
     };
@@ -108,7 +106,7 @@ export default function AddProductSalePage() {
             if (sale < 0) sale = 0;
             return { ...p, price_sale: Math.round(sale) };
         });
-        
+
         setSelectedProducts(updatedList);
     };
 
@@ -162,41 +160,41 @@ export default function AddProductSalePage() {
             <h1 className="text-2xl font-bold text-slate-800">Tạo Chương Trình Khuyến Mãi Mới</h1>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
+
                 {/* --- CỘT TRÁI: THỜI GIAN --- */}
                 <div className="space-y-6">
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 sticky top-6">
                         <div className="flex items-center gap-2 mb-4 text-orange-600 font-bold border-b pb-2">
                             <ClockIcon /> THỜI GIAN ÁP DỤNG
                         </div>
-                        
+
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-bold text-slate-700 mb-1">Tên chương trình</label>
-                                <input 
-                                    type="text" 
+                                <input
+                                    type="text"
                                     className="w-full border p-2 rounded focus:ring-2 ring-orange-200 outline-none"
                                     placeholder="VD: Sale 12.12"
                                     value={campaign.name}
-                                    onChange={e => setCampaign({...campaign, name: e.target.value})}
+                                    onChange={e => setCampaign({ ...campaign, name: e.target.value })}
                                 />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-600 mb-1">Thời gian bắt đầu</label>
-                                <input 
-                                    type="datetime-local" 
+                                <input
+                                    type="datetime-local"
                                     className="w-full border p-2 rounded focus:outline-none focus:border-orange-500"
                                     value={campaign.date_begin}
-                                    onChange={e => setCampaign({...campaign, date_begin: e.target.value})}
+                                    onChange={e => setCampaign({ ...campaign, date_begin: e.target.value })}
                                 />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-600 mb-1">Thời gian kết thúc</label>
-                                <input 
-                                    type="datetime-local" 
+                                <input
+                                    type="datetime-local"
                                     className="w-full border p-2 rounded focus:outline-none focus:border-orange-500"
                                     value={campaign.date_end}
-                                    onChange={e => setCampaign({...campaign, date_end: e.target.value})}
+                                    onChange={e => setCampaign({ ...campaign, date_end: e.target.value })}
                                 />
                             </div>
                             <div className="bg-yellow-50 p-3 text-xs text-yellow-800 rounded border border-yellow-200">
@@ -214,7 +212,7 @@ export default function AddProductSalePage() {
                                 🏷️ Sản phẩm khuyến mãi
                                 <span className="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-full">{selectedProducts.length}</span>
                             </h2>
-                            <button 
+                            <button
                                 onClick={openModal}
                                 className="flex items-center gap-2 text-indigo-600 border border-indigo-200 px-4 py-2 rounded-lg hover:bg-indigo-50 font-bold text-sm transition"
                             >
@@ -225,7 +223,7 @@ export default function AddProductSalePage() {
                         {/* THANH THIẾT LẬP NHANH */}
                         <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-wrap items-center gap-3 mb-6">
                             <span className="text-sm font-bold text-slate-600 uppercase">Thiết lập nhanh:</span>
-                            <select 
+                            <select
                                 className="border p-1.5 rounded text-sm outline-none"
                                 value={quickType}
                                 onChange={e => setQuickType(e.target.value)}
@@ -233,13 +231,13 @@ export default function AddProductSalePage() {
                                 <option value="percent">Giảm theo %</option>
                                 <option value="amount">Giảm tiền</option>
                             </select>
-                            <input 
-                                type="number" 
+                            <input
+                                type="number"
                                 className="w-20 border p-1.5 rounded text-sm outline-none"
                                 value={quickValue}
                                 onChange={e => setQuickValue(e.target.value)}
                             />
-                            <button 
+                            <button
                                 onClick={applyQuickSettings}
                                 className="text-sm text-red-600 font-bold hover:underline"
                             >
@@ -278,8 +276,8 @@ export default function AddProductSalePage() {
                                                 <div className="text-right">
                                                     <p className="text-xs text-red-500 font-bold mb-1">GIÁ KHUYẾN MÃI</p>
                                                     <div className="flex items-center gap-2">
-                                                        <input 
-                                                            type="number" 
+                                                        <input
+                                                            type="number"
                                                             className="w-28 border border-red-200 p-1.5 rounded text-right font-bold text-red-600 outline-none focus:border-red-500"
                                                             value={p.price_sale}
                                                             placeholder="0"
@@ -312,7 +310,7 @@ export default function AddProductSalePage() {
                         )}
                     </div>
 
-                    <button 
+                    <button
                         onClick={handleSubmit}
                         disabled={loading || selectedProducts.length === 0}
                         className={`w-full bg-red-600 text-white py-3 rounded-xl font-bold shadow-lg hover:bg-red-700 transition ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
@@ -326,7 +324,7 @@ export default function AddProductSalePage() {
             {isModalOpen && (
                 <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white w-full max-w-4xl rounded-xl shadow-2xl flex flex-col max-h-[85vh] animate-fadeIn">
-                        
+
                         {/* Modal Header */}
                         <div className="p-4 border-b flex justify-between items-center">
                             <h3 className="text-lg font-bold text-slate-800">Chọn sản phẩm khuyến mãi</h3>
@@ -339,9 +337,9 @@ export default function AddProductSalePage() {
                         <div className="p-4 bg-slate-50 border-b">
                             <div className="relative">
                                 <span className="absolute left-3 top-2.5 text-slate-400"><SearchIcon /></span>
-                                <input 
-                                    type="text" 
-                                    placeholder="Tìm kiếm theo tên sản phẩm..." 
+                                <input
+                                    type="text"
+                                    placeholder="Tìm kiếm theo tên sản phẩm..."
                                     className="w-full pl-10 pr-4 py-2 border rounded-lg outline-none focus:border-indigo-500"
                                     value={searchTerm}
                                     onChange={e => setSearchTerm(e.target.value)}
@@ -355,8 +353,8 @@ export default function AddProductSalePage() {
                                 <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
                                     <tr>
                                         <th className="px-6 py-3 w-10">
-                                            <input 
-                                                type="checkbox" 
+                                            <input
+                                                type="checkbox"
                                                 className="w-5 h-5 rounded text-indigo-600 cursor-pointer"
                                                 onChange={handleModalSelectAll}
                                                 checked={filteredModalProducts.length > 0 && filteredModalProducts.every(p => tempSelectedIds.includes(p.id))}
@@ -371,8 +369,8 @@ export default function AddProductSalePage() {
                                     {filteredModalProducts.map(p => (
                                         <tr key={p.id} className={`hover:bg-slate-50 cursor-pointer ${tempSelectedIds.includes(p.id) ? 'bg-indigo-50' : ''}`} onClick={() => handleModalToggleOne(p.id)}>
                                             <td className="px-6 py-4 text-center" onClick={e => e.stopPropagation()}>
-                                                <input 
-                                                    type="checkbox" 
+                                                <input
+                                                    type="checkbox"
                                                     className="w-5 h-5 rounded text-indigo-600 cursor-pointer"
                                                     checked={tempSelectedIds.includes(p.id)}
                                                     onChange={() => handleModalToggleOne(p.id)}

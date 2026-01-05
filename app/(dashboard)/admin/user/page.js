@@ -27,8 +27,9 @@ export default function AdminUserPage() {
             try {
                 setLoading(true);
                 const res = await UserService.index();
-                if (res.success) {
-                    setUsers(res.data.data?.data || res.data.data || []); 
+                if (res.data && res.data.success) {
+                    const userArray = res.data.data?.data || []; 
+                    setUsers(userArray);
                 }
             } catch (error) {
                 console.error("Lỗi tải người dùng:", error);

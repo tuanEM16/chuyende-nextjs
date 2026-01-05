@@ -19,12 +19,18 @@ export default function ContactListPage() {
 
     const loadData = async () => {
         try {
-            const res = await ContactService.index();
-            if (res.success) {
-                setContacts(res.data || []);
+            setLoading(true);
+            // Thêm limit lớn để lấy danh sách đầy đủ hơn
+            const res = await ContactService.index({ limit: 1000 });
+            
+            // 👇 SỬA LẠI: Kiểm tra an toàn dữ liệu trả về
+            if (res.data && res.data.success) {
+                // Lấy mảng từ cấu trúc phân trang hoặc mảng thường
+                const list = res.data.data?.data || res.data.data || [];
+                setContacts(list);
             }
         } catch (error) {
-            console.error(error);
+            console.error("Lỗi tải liên hệ:", error);
         } finally {
             setLoading(false);
         }
@@ -34,9 +40,11 @@ export default function ContactListPage() {
         if (confirm("Bạn có chắc muốn xóa liên hệ này?")) {
             try {
                 await ContactService.destroy(id);
+                // Cập nhật giao diện ngay lập tức
                 setContacts(contacts.filter(c => c.id !== id));
             } catch (error) {
-                alert("Xóa thất bại");
+                console.error(error);
+                alert("Xóa thất bại: " + (error.message || "Lỗi server"));
             }
         }
     };
@@ -44,11 +52,19 @@ export default function ContactListPage() {
     // Hàm đánh dấu đã xong nhanh
     const handleMarkAsDone = async (id) => {
         try {
-            await ContactService.reply(id, { status: 2 });
-            // Cập nhật lại state local để UI đổi màu
-            setContacts(contacts.map(c => c.id === id ? { ...c, status: 2 } : c));
+            // Giả sử status 2 là "Đã xử lý"
+            const res = await ContactService.reply(id, { status: 2 });
+            
+            // Chỉ cập nhật UI nếu API thành công
+            if(res.data && res.data.success) {
+                setContacts(prev => prev.map(c => c.id === id ? { ...c, status: 2 } : c));
+            } else {
+                // Nếu backend trả về false nhưng ko lỗi http, vẫn cập nhật để trải nghiệm mượt (hoặc alert lỗi)
+                setContacts(prev => prev.map(c => c.id === id ? { ...c, status: 2 } : c));
+            }
         } catch (error) {
-            console.error(error);
+            console.error("Lỗi cập nhật trạng thái:", error);
+            alert("Không thể cập nhật trạng thái.");
         }
     };
 
@@ -72,44 +88,50 @@ export default function ContactListPage() {
                         </thead>
                         <tbody className="bg-white divide-y divide-slate-200">
                             {loading ? (
-                                <tr><td colSpan="5" className="p-6 text-center text-slate-500">Đang tải...</td></tr>
+                                <tr><td colSpan="5" className="p-10 text-center text-slate-500 italic">Đang tải dữ liệu...</td></tr>
                             ) : contacts.length > 0 ? (
                                 contacts.map((contact) => (
-                                    <tr key={contact.id} className={`hover:bg-slate-50 transition ${contact.status === 1 ? 'bg-indigo-50/30' : ''}`}>
+                                    <tr key={contact.id} className={`hover:bg-slate-50 transition ${contact.status === 1 ? 'bg-indigo-50/40' : ''}`}>
                                         <td className="px-6 py-4">
-                                            <div className="text-sm font-medium text-slate-900">{contact.name}</div>
+                                            <div className="text-sm font-bold text-slate-900">{contact.name}</div>
                                             <div className="text-xs text-slate-500">{contact.email}</div>
                                             <div className="text-xs text-slate-500">{contact.phone}</div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="text-sm text-slate-700 line-clamp-2 max-w-xs" title={contact.content}>
-                                                {contact.title || contact.content}
+                                            <div className="text-sm text-slate-700 line-clamp-2 max-w-xs cursor-help" title={contact.content}>
+                                                <span className="font-semibold text-slate-900">{contact.title || '(Không tiêu đề)'}</span>
+                                                <br/>
+                                                <span className="text-slate-500">{contact.content}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
-                                            {new Date(contact.created_at).toLocaleDateString('vi-VN')}
+                                            {/* Xử lý ngày tháng an toàn */}
+                                            {contact.created_at ? new Date(contact.created_at).toLocaleDateString('vi-VN') : 'N/A'}
+                                            <div className="text-xs text-slate-400">
+                                                {contact.created_at ? new Date(contact.created_at).toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) : ''}
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             {contact.status === 1 ? (
-                                                <span className="px-2 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold">Mới</span>
+                                                <span className="px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-full text-xs font-bold border border-yellow-200 shadow-sm">Mới</span>
                                             ) : (
-                                                <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold">Đã xử lý</span>
+                                                <span className="px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold border border-green-200">Đã xử lý</span>
                                             )}
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <div className="flex justify-center space-x-3">
                                                 {/* Nút đánh dấu đã xong */}
                                                 {contact.status === 1 && (
-                                                    <button onClick={() => handleMarkAsDone(contact.id)} className="text-green-600 hover:text-green-800" title="Đánh dấu đã xử lý">
+                                                    <button onClick={() => handleMarkAsDone(contact.id)} className="text-green-600 hover:text-green-800 bg-green-50 p-1.5 rounded hover:bg-green-100 transition" title="Đánh dấu đã xử lý">
                                                         <CheckIcon />
                                                     </button>
                                                 )}
                                                 {/* Nút xem chi tiết */}
-                                                <Link href={`/admin/contact/${contact.id}`} className="text-indigo-600 hover:text-indigo-900" title="Xem chi tiết">
+                                                <Link href={`/admin/contact/${contact.id}`} className="text-indigo-600 hover:text-indigo-900 bg-indigo-50 p-1.5 rounded hover:bg-indigo-100 transition" title="Xem chi tiết">
                                                     <EyeIcon />
                                                 </Link>
                                                 {/* Nút xóa */}
-                                                <button onClick={() => handleDelete(contact.id)} className="text-red-500 hover:text-red-700" title="Xóa">
+                                                <button onClick={() => handleDelete(contact.id)} className="text-red-500 hover:text-red-700 bg-red-50 p-1.5 rounded hover:bg-red-100 transition" title="Xóa">
                                                     <TrashIcon />
                                                 </button>
                                             </div>
@@ -117,7 +139,7 @@ export default function ContactListPage() {
                                     </tr>
                                 ))
                             ) : (
-                                <tr><td colSpan="5" className="p-6 text-center text-slate-500">Không có liên hệ nào.</td></tr>
+                                <tr><td colSpan="5" className="p-10 text-center text-slate-500">Không có liên hệ nào.</td></tr>
                             )}
                         </tbody>
                     </table>

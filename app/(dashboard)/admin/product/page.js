@@ -29,10 +29,11 @@ export default function AdminProductPage() {
                 setLoading(true);
                 const productRes = await ProductService.index();
 
-                if (productRes.success) {
-                    setProducts(productRes.data.data || productRes.data || []);
+                if (productRes.data && productRes.data.success) {
+                    const productList = productRes.data.data?.data || [];
+                    setProducts(productList);
                 } else if (productRes.data && productRes.data.data) {
-                     setProducts(productRes.data.data);
+                    setProducts(productRes.data.data);
                 }
 
             } catch (error) {
@@ -160,7 +161,7 @@ export default function AdminProductPage() {
                                                 >
                                                     <EyeIcon size={18} />
                                                 </Link>
-                                                
+
                                                 {/* Edit Button */}
                                                 <Link
                                                     href={`/admin/product/${product.id}/edit`}
@@ -169,7 +170,7 @@ export default function AdminProductPage() {
                                                 >
                                                     <EditIcon size={18} />
                                                 </Link>
-                                                
+
                                                 {/* Delete Button */}
                                                 <button
                                                     onClick={() => handleDelete(product.id)}
