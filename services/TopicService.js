@@ -1,21 +1,14 @@
 import httpAxios from './httpAxios';
 
+const PUBLIC_URL = 'topic';
+const ADMIN_URL = 'admin/topic';
+
 const TopicService = {
-    index: async () => {
-        return await httpAxios.get('topic');
-    },
-    show: async (id) => {
-        return await httpAxios.get(`topic/${id}`);
-    },
-    store: async (data) => {
-        return await httpAxios.post('topic', data);
-    },
-    update: async (id, data) => {
-        return await httpAxios.put(`topic/${id}`, data);
-    },
-    destroy: async (id) => {
-        return await httpAxios.delete(`topic/${id}`);
-    }
+    index: () => httpAxios.get(PUBLIC_URL),
+    show: (id) => httpAxios.get(`${PUBLIC_URL}/${id}`),
+    store: (data) => httpAxios.post(ADMIN_URL, data),
+    update: (id, data) => httpAxios.put(`${ADMIN_URL}/${id}`, data),
+    destroy: (id) => httpAxios.delete(`${ADMIN_URL}/${id}`)
 };
 
 export default TopicService;

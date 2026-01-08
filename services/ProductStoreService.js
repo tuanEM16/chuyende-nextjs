@@ -1,21 +1,22 @@
 import httpAxios from './httpAxios';
 
+const ADMIN_URL = 'admin/productstore';
+
 const ProductStoreService = {
-    index: async () => {
-        return await httpAxios.get('productstore');
-    },
-    store: async (data) => {
-        return await httpAxios.post('productstore', data);
-    },
-    update: async (id, data) => {
-        return await httpAxios.put(`productstore/${id}`, data);
-    },
-    destroy: async (id) => {
-        return await httpAxios.delete(`productstore/${id}`);
-    },
-    show: async (id) => {
-        return await httpAxios.get(`productstore/${id}`);
-    }
+
+    index: () => httpAxios.get(ADMIN_URL),
+
+
+    show: (id) => httpAxios.get(`${ADMIN_URL}/${id}`),
+
+
+    store: (data) => httpAxios.post(ADMIN_URL, data),
+
+
+    update: (id, data) => httpAxios.put(`${ADMIN_URL}/${id}`, data),
+
+
+    destroy: (id) => httpAxios.delete(`${ADMIN_URL}/${id}`)
 };
 
 export default ProductStoreService;

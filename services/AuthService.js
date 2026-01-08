@@ -1,21 +1,10 @@
 import httpAxios from './httpAxios';
 
 const AuthService = {
-    login: async (email, password) => {
-        return await httpAxios.post('login', { email, password });
-    },
-
-    register: async (data) => {
-        return await httpAxios.post('register', data);
-    },
-
-    logout: async () => {
-        return await httpAxios.post('logout');
-    },
-
-    getProfile: async () => {
-        return await httpAxios.get('profile'); // Cần route API tương ứng ở Laravel
-    }
+    login: (email, password) => httpAxios.post('login', { email, password }),
+    register: (data) => httpAxios.post('register', data),
+    logout: () => httpAxios.post('logout'),
+    getProfile: () => httpAxios.get('profile')
 };
 
 export default AuthService;

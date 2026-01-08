@@ -21,7 +21,6 @@ export default function ProductDetailPage({ params: paramsPromise }) {
         const fetchData = async () => {
             try {
                 const res = await ProductService.show(id);
-                // Xử lý response linh hoạt
                 const data = res.data && res.data.data ? res.data.data : (res.data || res);
 
                 if (data) {

@@ -1,23 +1,19 @@
 import httpAxios from './httpAxios';
 
+const ADMIN_URL = 'admin/contact';
+
 const ContactService = {
-    index: async () => {
-        return await httpAxios.get('contact');
-    },
-    show: async (id) => {
-        return await httpAxios.get(`contact/${id}`);
-    },
-    // Thường dùng ở trang Frontend (Khách gửi liên hệ)
-    store: async (data) => {
-        return await httpAxios.post('contact', data);
-    },
-    // Admin trả lời hoặc cập nhật trạng thái
-    update: async (id, data) => {
-        return await httpAxios.put(`contact/${id}`, data);
-    },
-    destroy: async (id) => {
-        return await httpAxios.delete(`contact/${id}`);
-    }
+
+    store: (data) => httpAxios.post('contact/store', data),
+
+
+    index: () => httpAxios.get(ADMIN_URL),
+    show: (id) => httpAxios.get(`${ADMIN_URL}/${id}`),
+    
+
+    reply: (id, data) => httpAxios.post(`${ADMIN_URL}/reply/${id}`, data),
+    
+    destroy: (id) => httpAxios.delete(`${ADMIN_URL}/${id}`)
 };
 
 export default ContactService;

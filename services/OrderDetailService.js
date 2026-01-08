@@ -1,8 +1,16 @@
 import httpAxios from './httpAxios';
 
+const ADMIN_URL = 'admin/orderdetail';
+
 const OrderDetailService = {
-    index: async () => await httpAxios.get('orderdetail'),
-    destroy: async (id) => await httpAxios.delete(`orderdetail/${id}`),
+
+    index: () => httpAxios.get(ADMIN_URL),
+
+
+    show: (id) => httpAxios.get(`${ADMIN_URL}/${id}`),
+
+
+    destroy: (id) => httpAxios.delete(`${ADMIN_URL}/${id}`)
 };
 
 export default OrderDetailService;
