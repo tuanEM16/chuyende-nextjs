@@ -5,7 +5,7 @@ import Link from 'next/link';
 import ProductStoreService from '@/services/ProductStoreService';
 import ProductService from '@/services/ProductService';
 
-// --- ICONS (Đã chuẩn hóa JSX) ---
+
 const PlusIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
 const SearchIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
 const TrashIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
@@ -27,7 +27,7 @@ export default function InventoryPage() {
             const res = await ProductStoreService.index();
             
             if (res.data && res.data.success) {
-                // Xử lý an toàn: API có thể trả về mảng hoặc object phân trang
+
                 const list = Array.isArray(res.data.data) ? res.data.data : (res.data.data?.data || []);
                 setHistory(list);
             }
@@ -42,7 +42,7 @@ export default function InventoryPage() {
         if(confirm('Bạn có chắc muốn xóa phiếu nhập này?')) {
             try {
                 await ProductStoreService.destroy(id);
-                // Cập nhật giao diện ngay lập tức
+
                 setHistory(prev => prev.filter(item => item.id !== id));
             } catch (error) {
                 alert('Xóa thất bại: ' + (error.message || 'Lỗi server'));
@@ -50,7 +50,7 @@ export default function InventoryPage() {
         }
     };
 
-    // Filter client-side
+
     const filteredHistory = history.filter(item => 
         item.product?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
         String(item.id).includes(searchTerm)

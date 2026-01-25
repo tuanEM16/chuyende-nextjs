@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import UserService from '@/services/UserService'; // Import Service
 
-// --- ICONS (Đồng bộ bộ icon chuẩn) ---
+
 const Icon = ({ path, size = 20, className = '' }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
         {Array.isArray(path) ? path.map((p, i) => <path key={i} d={p} />) : <path d={path} />}
@@ -14,14 +14,14 @@ const SearchIcon = (props) => <Icon path="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 01
 const PlusIcon = (props) => <Icon path={["M12 5v14","M5 12h14"]} {...props} />;
 const EditIcon = (props) => <Icon path={["M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"]} {...props} />;
 const Trash2Icon = (props) => <Icon path={["M3 6h18","M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6","M10 11v6","M14 11v6","M15 6V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v2"]} {...props} />;
-// --- END ICONS ---
+
 
 export default function AdminUserPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // 1. Lấy dữ liệu
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -40,7 +40,7 @@ export default function AdminUserPage() {
         fetchData();
     }, []);
 
-    // 2. Xử lý xóa
+
     const handleDelete = async (id) => {
         if (window.confirm('Bạn có chắc chắn muốn xóa thành viên này?')) {
             try {
@@ -54,7 +54,7 @@ export default function AdminUserPage() {
         }
     };
 
-    // 3. Filter tìm kiếm (Tìm theo Tên, Email hoặc Username)
+
     const filteredUsers = useMemo(() => {
         const lowerCaseSearch = searchTerm.toLowerCase();
         return users.filter(user =>
@@ -131,7 +131,7 @@ export default function AdminUserPage() {
                                                         }}
                                                     />
                                                 ) : (
-                                                    // Fallback: Chữ cái đầu tên
+
                                                     user.name?.charAt(0).toUpperCase()
                                                 )}
                                             </div>

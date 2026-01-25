@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ProductImageService from '@/services/ProductImageService';
 
-// --- ICONS ---
+
 const SaveIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
 const ArrowLeftIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const TrashIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
@@ -19,13 +19,13 @@ export default function EditProductImageBulkPage({ params: paramsPromise }) {
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
 
-    // Thông tin sản phẩm chung
+
     const [productInfo, setProductInfo] = useState({
         id: null,
         name: 'Đang tải...',
     });
 
-    // Danh sách ảnh của sản phẩm này
+
     const [galleryItems, setGalleryItems] = useState([]);
 
     useEffect(() => {
@@ -35,26 +35,26 @@ export default function EditProductImageBulkPage({ params: paramsPromise }) {
             try {
                 setFetching(true);
                 
-                // 1. Lấy thông tin ảnh hiện tại
+
                 const currentRes = await ProductImageService.show(currentId);
                 const currentData = currentRes.data?.data || currentRes.data;
 
                 if (!currentData) throw new Error("Không tìm thấy hình ảnh.");
 
-                // Cập nhật thông tin sản phẩm
+
                 setProductInfo({
                     id: currentData.product_id,
                     name: currentData.product?.name || `Sản phẩm #${currentData.product_id}`
                 });
 
-                // 2. Lấy tất cả ảnh để lọc ra các ảnh cùng sản phẩm
+
                 const allRes = await ProductImageService.index();
                 const allImages = allRes.data?.data || allRes.data || [];
 
-                // 3. Lọc ảnh cùng product_id
+
                 const siblings = allImages.filter(item => String(item.product_id) === String(currentData.product_id));
                 
-                // Map dữ liệu để xử lý trên form
+
                 const mappedItems = siblings.map(item => ({
                     id: item.id,
                     image_url: ProductImageService.getImageUrl(item.image), // Url hiển thị
@@ -78,7 +78,7 @@ export default function EditProductImageBulkPage({ params: paramsPromise }) {
         initData();
     }, [currentId]);
 
-    // Handle thay đổi text (Alt/Title)
+
     const handleTextChange = (index, field, value) => {
         const newItems = [...galleryItems];
         newItems[index][field] = value;
@@ -86,7 +86,7 @@ export default function EditProductImageBulkPage({ params: paramsPromise }) {
         setGalleryItems(newItems);
     };
 
-    // Handle chọn file mới thay thế
+
     const handleFileChange = (index, e) => {
         if (e.target.files && e.target.files[0]) {
             const file = e.target.files[0];
@@ -98,7 +98,7 @@ export default function EditProductImageBulkPage({ params: paramsPromise }) {
         }
     };
 
-    // Handle xóa ảnh
+
     const handleRemoveItem = (index) => {
         if(confirm("Bạn muốn xóa ảnh này vĩnh viễn?")) {
             const newItems = [...galleryItems];
@@ -121,7 +121,7 @@ export default function EditProductImageBulkPage({ params: paramsPromise }) {
                 return;
             }
 
-            // 1. Update các item có thay đổi
+
             const updatePromises = itemsToUpdate.map(item => {
                 const formData = new FormData();
                 formData.append('alt', item.alt);
@@ -129,13 +129,13 @@ export default function EditProductImageBulkPage({ params: paramsPromise }) {
                 if (item.file) {
                     formData.append('image', item.file);
                 }
-                // Laravel cần _method=PUT khi dùng FormData
+
                 formData.append('_method', 'PUT'); 
 
                 return ProductImageService.update(item.id, formData);
             });
 
-            // 2. Delete các item bị xóa
+
             const deletePromises = itemsToDelete.map(item => {
                 return ProductImageService.destroy(item.id);
             });

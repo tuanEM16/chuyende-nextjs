@@ -9,7 +9,7 @@ export default function AddPost() {
     
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    // ĐÃ SỬA: Dùng state 'content' thay vì 'detail'
+
     const [content, setContent] = useState(''); 
     const [status, setStatus] = useState(1);
     const [image, setImage] = useState(null);
@@ -31,7 +31,7 @@ export default function AddPost() {
         formData.append('title', title);
         formData.append('description', description);
         
-        // ĐÃ SỬA: Gửi key 'content' lên server
+
         formData.append('content', content); 
         
         formData.append('status', status);

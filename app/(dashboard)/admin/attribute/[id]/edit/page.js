@@ -16,7 +16,7 @@ export default function EditAttributePage({ params: paramsPromise }) {
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
 
-    // CHỈ CÒN NAME
+
     const [name, setName] = useState('');
 
     useEffect(() => {
@@ -52,7 +52,7 @@ const handleSubmit = async (e) => {
             const res = await AttributeService.update(id, dataToSend);
             console.log("Phản hồi Update:", res); 
 
-            // Logic kiểm tra đa năng tương tự
+
             const isSuccess = 
                 res.success === true || 
                 (res.data && res.data.success === true) ||

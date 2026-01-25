@@ -7,7 +7,7 @@ import UserService from '@/services/UserService';
 import ProductService from '@/services/ProductService';
 import ContactService from '@/services/ContactService';
 
-// --- INLINE SVG ICONS ---
+
 const Icon = ({ path, size = 24, className = '' }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
         {Array.isArray(path) ? path.map((p, i) => <path key={i} d={p} />) : <path d={path} />}
@@ -17,7 +17,7 @@ const DollarSign = (props) => <Icon path={["M12 1v22","M17 5H9.5a3.5 3.5 0 0 0 0
 const ShoppingBag = (props) => <Icon path={["M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z","M3 6h18","M16 10a4 4 0 0 1-8 0"]} {...props} />;
 const Users = (props) => <Icon path={["M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2","M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z","M22 21v-2a4 4 0 0 0-3-3.87","M16 3.13a4 4 0 1 1 0 7.75"]} {...props} />;
 const Package = (props) => <Icon path={["M16.5 9.4 7.55 4.24","M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z","M3.29 7 12 12.01 20.71 7","M12 12v10.06"]} {...props} />;
-// --- END ICONS ---
+
 
 export default function DashboardPage() {
     const [stats, setStats] = useState({
@@ -33,7 +33,7 @@ export default function DashboardPage() {
     useEffect(() => {
         const fetchDashboardData = async () => {
             try {
-                // Gọi song song các API
+
                 const [orderRes, userRes, productRes, contactRes] = await Promise.all([
                     OrderService.index(),
                     UserService.index(),
@@ -41,40 +41,40 @@ export default function DashboardPage() {
                     ContactService.index()
                 ]);
 
-                // 1. Tính Doanh thu & Đơn hàng
+
                 let totalRevenue = 0;
                 let ordersList = [];
                 if (orderRes.success) {
                     ordersList = orderRes.data.data || orderRes.data || [];
                     ordersList.forEach(order => {
-                        // Tính tổng tiền nếu có orderdetails
+
                         const orderTotal = OrderService.calculateTotal(order.orderdetails);
-                        // Chỉ cộng tiền các đơn đã giao thành công (status = 3)
+
                         if (order.status === 3) { 
                             totalRevenue += orderTotal;
                         }
                     });
                 }
 
-                // 2. Đếm User
+
                 let userCount = 0;
                 if (userRes.success) {
                     const users = userRes.data.data || userRes.data || [];
                     userCount = users.length;
                 }
 
-                // 3. Đếm Product
+
                 let productCount = 0;
                 if (productRes.success) {
                     const products = productRes.data.data || productRes.data || [];
                     productCount = products.length;
                 }
 
-                // 4. Lấy Liên hệ mới nhất
+
                 let contactsList = [];
                 if (contactRes.success) {
                     const contacts = contactRes.data || [];
-                    // Lọc tin mới (status=1) và lấy 5 tin đầu
+
                     contactsList = contacts.filter(c => c.status === 1).slice(0, 5); 
                 }
 
@@ -85,7 +85,7 @@ export default function DashboardPage() {
                     products: productCount
                 });
 
-                // Lấy 6 đơn hàng mới nhất
+
                 setRecentOrders(ordersList.slice(0, 6)); 
                 setNewContacts(contactsList);
 

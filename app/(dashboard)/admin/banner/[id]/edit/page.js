@@ -3,7 +3,7 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import BannerService from '@/services/BannerService';
 
-// --- ICONS ---
+
 const SaveIcon = () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
 const ArrowLeftIcon = () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 
@@ -15,7 +15,7 @@ export default function EditBanner({ params: paramsPromise }) {
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
 
-    // Form state
+
     const [name, setName] = useState('');
     const [link, setLink] = useState('');
     const [position, setPosition] = useState('slideshow');
@@ -26,18 +26,18 @@ export default function EditBanner({ params: paramsPromise }) {
     const [image, setImage] = useState(null);       // File mới
     const [preview, setPreview] = useState(null);   // URL ảnh preview
 
-    // --- 1. LOAD DỮ LIỆU CŨ ---
+
     useEffect(() => {
         if(!id) return;
 
         const fetchData = async () => {
             try {
-                // Gọi API lấy thông tin banner theo ID
+
                 const res = await BannerService.show(id);
                 const data = res.data?.data || res.data;
                 
                 if(data) {
-                    // Đổ dữ liệu vào state
+
                     setName(data.name || '');
                     setLink(data.link || '');
                     setPosition(data.position || 'slideshow');
@@ -45,7 +45,7 @@ export default function EditBanner({ params: paramsPromise }) {
                     setSortOrder(data.sort_order || 0);
                     setStatus(data.status ?? 1);
                     
-                    // Hiển thị ảnh cũ
+
                     if (data.image) {
                         setPreview(BannerService.getImageUrl(data.image));
                     }
@@ -62,7 +62,7 @@ export default function EditBanner({ params: paramsPromise }) {
         fetchData();
     }, [id]);
 
-    // Xử lý khi chọn ảnh mới
+
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -71,7 +71,7 @@ export default function EditBanner({ params: paramsPromise }) {
         }
     };
 
-    // Gửi form cập nhật
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setProcessing(true);

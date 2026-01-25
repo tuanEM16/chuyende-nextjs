@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import PostService from '@/services/PostService';
 
-// --- ICONS (SVG thuần để nhẹ web) ---
+
 const CalendarIcon = ({ className = '' }) => (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
 );
@@ -17,9 +17,9 @@ const ArrowRightIcon = () => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
 );
 
-// --- COMPONENT CON: POST CARD ---
+
 const PostCard = ({ post }) => {
-    // Format ngày tháng tiếng Việt
+
     const formatDate = (dateString) => {
         if (!dateString) return '';
         return new Date(dateString).toLocaleDateString('vi-VN', {
@@ -80,7 +80,7 @@ const PostCard = ({ post }) => {
     );
 };
 
-// --- COMPONENT CHÍNH: POST PAGE ---
+
 export default function PostPage() {
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -88,19 +88,19 @@ export default function PostPage() {
     useEffect(() => {
         const fetchPosts = async () => {
             try {
-                // Gọi API qua Service
+
                 const res = await PostService.index();
                 
-                // Xử lý dữ liệu trả về từ Laravel
-                // Laravel paginate trả về dạng: { data: { current_page: 1, data:Array[...] } }
-                // Nếu không paginate thì trả về: { data: Array[...] }
+
+
+
                 let dataList = [];
                 
                 if (res.data?.data?.data && Array.isArray(res.data.data.data)) {
-                    // Trường hợp có phân trang (Paginate)
+
                     dataList = res.data.data.data;
                 } else if (res.data?.data && Array.isArray(res.data.data)) {
-                    // Trường hợp trả về mảng trực tiếp
+
                     dataList = res.data.data;
                 }
 
@@ -133,7 +133,7 @@ export default function PostPage() {
 
                 {/* Content Section */}
                 {loading ? (
-                    // Hiệu ứng Loading (Skeleton)
+
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         {[1, 2, 3, 4, 5, 6].map((i) => (
                             <div key={i} className="bg-white rounded-2xl p-4 h-[450px] border border-slate-200 shadow-sm">
@@ -158,7 +158,7 @@ export default function PostPage() {
                                 ))}
                             </div>
                         ) : (
-                            // Giao diện khi không có bài viết
+
                             <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl shadow-sm border border-slate-200">
                                 <div className="p-4 rounded-full bg-slate-100 text-slate-400 mb-4">
                                     <ClockIcon />

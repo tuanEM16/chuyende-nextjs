@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import BannerService from '@/services/BannerService';
 
-// --- ICONS ---
+
 const ArrowLeftIcon = () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const EditIcon = () => <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
 
@@ -21,7 +21,7 @@ export default function BannerDetail({ params: paramsPromise }) {
         const fetchBanner = async () => {
             try {
                 const res = await BannerService.show(id);
-                // Lấy data an toàn
+
                 const data = res.data?.data || res.data;
                 setBanner(data);
             } catch (error) {

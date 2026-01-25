@@ -11,9 +11,11 @@ const ProductService = {
     store: (data) => httpAxios.post(`${ADMIN_URL}/store`, data, {
         headers: { 'Content-Type': 'multipart/form-data' }
     }),
-    update: (id, data) => httpAxios.post(`${ADMIN_URL}/update/${id}?_method=PUT`, data, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-    }),
+    update: (id, data) =>
+        httpAxios.post(`${ADMIN_URL}/update/${id}`, data, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        }),
+
     destroy: (id) => httpAxios.delete(`${ADMIN_URL}/destroy/${id}`),
     getImageUrl: (filename) => {
         if (!filename) return "https://placehold.co/400x400?text=No+Image";

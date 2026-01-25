@@ -6,7 +6,7 @@ import Link from 'next/link';
 import ProductStoreService from '@/services/ProductStoreService';
 import ProductService from '@/services/ProductService';
 
-// --- ICONS ---
+
 const SearchIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>;
 const TrashIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
 const SaveIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
@@ -37,9 +37,9 @@ export default function BulkImportPage() {
         fetchData();
     }, []);
 
-    // 2. Xử lý thêm sản phẩm vào bảng
+
     const addToImportList = (product) => {
-        // Kiểm tra xem đã có chưa
+
         const exists = importList.find(item => item.id === product.id);
         if (exists) {
             alert("Sản phẩm này đã có trong danh sách nhập!");
@@ -56,23 +56,23 @@ export default function BulkImportPage() {
         setShowSuggestions(false);
     };
 
-    // 3. Xử lý thay đổi input trên bảng
+
     const updateItem = (id, field, value) => {
         setImportList(prev => prev.map(item =>
             item.id === id ? { ...item, [field]: value } : item
         ));
     };
 
-    // 4. Xóa dòng
+
     const removeItem = (id) => {
         setImportList(prev => prev.filter(item => item.id !== id));
     };
 
-    // 5. Submit Lưu Kho
+
     const handleSave = async () => {
         if (importList.length === 0) return alert("Chưa có sản phẩm nào!");
 
-        // Validate dữ liệu
+
         const invalidItem = importList.find(item => item.importQty <= 0 || item.importPrice < 0);
         if (invalidItem) {
             alert(`Sản phẩm "${invalidItem.name}" có số lượng hoặc giá không hợp lệ!`);
@@ -81,9 +81,9 @@ export default function BulkImportPage() {
 
         setLoading(true);
         try {
-            // Vì Backend Controller hiện tại chỉ hỗ trợ hàm store() cho 1 sản phẩm
-            // Nên ta sẽ dùng vòng lặp để gọi API cho từng sản phẩm trong danh sách
-            // (Cách này nhanh gọn, không cần sửa Backend)
+
+
+
             const promises = importList.map(item => {
                 return ProductStoreService.store({
                     product_id: item.id,
@@ -104,7 +104,7 @@ export default function BulkImportPage() {
         }
     };
 
-    // Filter tìm kiếm
+
     const filteredSuggestions = allProducts.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase())
     );

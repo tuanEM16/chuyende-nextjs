@@ -5,7 +5,7 @@ import ProductAttributeService from '@/services/ProductAttributeService';
 import ProductService from '@/services/ProductService';
 import AttributeService from '@/services/AttributeService';
 
-// --- ICONS ---
+
 const SaveIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
 const TrashIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
 const PlusIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
@@ -19,13 +19,13 @@ export default function EditProductAttributeBulk({ params: paramsPromise }) {
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
 
-    // Dữ liệu nguồn
+
     const [attributeDefinitions, setAttributeDefinitions] = useState([]); // Danh sách loại (Màu, Size...)
     
-    // Thông tin sản phẩm đang sửa
+
     const [productInfo, setProductInfo] = useState(null);
 
-    // Danh sách các dòng thuộc tính để sửa (Rows)
+
     const [rows, setRows] = useState([]);
 
     useEffect(() => {
@@ -35,29 +35,29 @@ export default function EditProductAttributeBulk({ params: paramsPromise }) {
             try {
                 setFetching(true);
 
-                // 1. Lấy tất cả định nghĩa thuộc tính (Màu, Size...)
+
                 const attrDefRes = await AttributeService.index();
                 setAttributeDefinitions(attrDefRes.data?.data || attrDefRes.data || []);
 
-                // 2. Lấy thông tin thuộc tính hiện tại để biết Product ID
+
                 const currentRes = await ProductAttributeService.show(currentId);
                 const currentItem = currentRes.data?.data || currentRes.data;
                 
                 if (!currentItem) throw new Error("Không tìm thấy dữ liệu gốc");
 
-                // 3. Lấy thông tin chi tiết sản phẩm (để hiển thị hình ảnh/tên)
+
                 const prodRes = await ProductService.show(currentItem.product_id);
                 setProductInfo(prodRes.data?.data || prodRes.data);
 
-                // 4. Lấy TOÀN BỘ thuộc tính của sản phẩm này
-                // (Vì API hiện tại chưa có endpoint 'getByProductId', ta lấy list rồi filter tạm)
+
+
                 const allAttrRes = await ProductAttributeService.index();
                 const allItems = allAttrRes.data?.data || allAttrRes.data || [];
                 
-                // Lọc ra các thuộc tính của sản phẩm này
+
                 const siblings = allItems.filter(item => String(item.product_id) === String(currentItem.product_id));
 
-                // Map vào state rows
+
                 const mappedRows = siblings.map(item => ({
                     id: item.id,            // ID thực trong DB
                     attribute_id: item.attribute_id,
@@ -80,9 +80,9 @@ export default function EditProductAttributeBulk({ params: paramsPromise }) {
         initData();
     }, [currentId]);
 
-    // --- HANDLERS ---
 
-    // Thêm dòng mới
+
+
     const handleAddRow = () => {
         setRows([
             ...rows, 
@@ -97,7 +97,7 @@ export default function EditProductAttributeBulk({ params: paramsPromise }) {
         ]);
     };
 
-    // Sửa giá trị trong dòng
+
     const handleChange = (index, field, val) => {
         const newRows = [...rows];
         newRows[index][field] = val;
@@ -105,7 +105,7 @@ export default function EditProductAttributeBulk({ params: paramsPromise }) {
         setRows(newRows);
     };
 
-    // Xóa dòng (Nếu mới -> xóa luôn, Nếu cũ -> đánh dấu xóa)
+
     const handleDeleteRow = (index) => {
         const newRows = [...rows];
         if (newRows[index].is_new) {
@@ -116,14 +116,14 @@ export default function EditProductAttributeBulk({ params: paramsPromise }) {
         setRows(newRows);
     };
 
-    // Undo xóa
+
     const handleUndoDelete = (index) => {
         const newRows = [...rows];
         newRows[index].is_deleted = false;
         setRows(newRows);
     };
 
-    // Submit tất cả
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -132,13 +132,13 @@ export default function EditProductAttributeBulk({ params: paramsPromise }) {
             const productId = productInfo.id;
             const promises = [];
 
-            // 1. Xử lý các dòng bị XÓA
+
             const toDelete = rows.filter(r => !r.is_new && r.is_deleted);
             toDelete.forEach(r => {
                 promises.push(ProductAttributeService.destroy(r.id));
             });
 
-            // 2. Xử lý các dòng MỚI (Thêm vào DB)
+
             const toCreate = rows.filter(r => r.is_new && !r.is_deleted);
             toCreate.forEach(r => {
                 if(r.attribute_id && r.value) {
@@ -150,7 +150,7 @@ export default function EditProductAttributeBulk({ params: paramsPromise }) {
                 }
             });
 
-            // 3. Xử lý các dòng CẬP NHẬT (Sửa DB)
+
             const toUpdate = rows.filter(r => !r.is_new && !r.is_deleted && r.is_changed);
             toUpdate.forEach(r => {
                  promises.push(ProductAttributeService.update(r.id, {
@@ -225,7 +225,7 @@ export default function EditProductAttributeBulk({ params: paramsPromise }) {
                         <div className="p-6 space-y-4">
                             {rows.map((row, index) => {
                                 if (row.is_deleted && !row.is_new) {
-                                    // Hiển thị dạng dòng đã xóa (để Undo)
+
                                     return (
                                         <div key={row.id} className="flex justify-between items-center p-3 bg-red-50 border border-red-100 rounded-lg opacity-70">
                                             <span className="text-sm text-red-500 italic flex items-center gap-2">

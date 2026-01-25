@@ -1,68 +1,81 @@
 'use client';
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import UserService from '@/services/UserService'; // Import Service bạn đã tạo
+import UserService from '@/services/UserService';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true); // ✅
+  const router = useRouter();
 
-    // Load user từ localStorage khi F5 trang
-    useEffect(() => {
-        const token = localStorage.getItem('accessToken');
-        const storedUser = localStorage.getItem('user');
-        if (token && storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-    }, []);
 
-    // HÀM LOGIN GỌI API
-    const login = async (email, password) => {
-        try {
-            // Gọi API Login
-            const res = await UserService.login(email, password);
+  const updateUser = (newUser) => {
+    setUser(newUser);
+    localStorage.setItem('user', JSON.stringify(newUser));
+  };
 
-            if (res.data.success) {
-                const { access_token, data } = res.data;
 
-                // 1. Lưu Token và Info vào LocalStorage
-                localStorage.setItem('accessToken', access_token);
-                localStorage.setItem('user', JSON.stringify(data));
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    const storedUser = localStorage.getItem('user');
 
-                // 2. Cập nhật State
-                setUser(data);
+    if (token && storedUser) {
+      setUser(JSON.parse(storedUser));
+    } else {
+      setUser(null);
+    }
+    setIsLoading(false);
+  }, []);
 
-                // 3. Trả về kết quả cho trang Login xử lý chuyển hướng
-                return { success: true, role: data.roles };
-            }
-        } catch (error) {
-            console.error("Login Failed:", error);
-            // Trả về lỗi từ Backend (nếu có)
-            return { 
-                success: false, 
-                message: error.response?.data?.message || 'Đăng nhập thất bại' 
-            };
-        }
-    };
+  const login = async (email, password) => {
+    try {
+      const res = await UserService.login(email, password);
 
-    // HÀM LOGOUT
-    const logout = () => {
-        // Gọi API Logout (không bắt buộc await nếu muốn nhanh)
-        UserService.logout().catch(err => console.log(err));
-        
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('user');
-        setUser(null);
-        router.push('/login');
-    };
+      if (res.data.success) {
+        const { access_token, data } = res.data;
 
-    return (
-        <AuthContext.Provider value={{ user, login, logout }}>
-            {children}
-        </AuthContext.Provider>
-    );
+        localStorage.setItem('accessToken', access_token);
+        localStorage.setItem('user', JSON.stringify(data));
+
+        setUser(data);
+
+        return { success: true, role: data.roles };
+      }
+
+      return { success: false, message: 'Đăng nhập thất bại' };
+    } catch (error) {
+      console.error('Login Failed:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Đăng nhập thất bại',
+      };
+    }
+  };
+
+  const logout = () => {
+    UserService.logout().catch((err) => console.log(err));
+
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user');
+    setUser(null);
+    router.push('/login');
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isLoading,   // ✅
+        login,
+        logout,
+        updateUser,  // ✅ QUAN TRỌNG
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => useContext(AuthContext);

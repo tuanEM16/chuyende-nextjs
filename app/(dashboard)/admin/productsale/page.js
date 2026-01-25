@@ -5,7 +5,7 @@ import Link from 'next/link';
 import ProductSaleService from '@/services/ProductSaleService';
 import ProductService from '@/services/ProductService';
 
-// --- ICONS ---
+
 const PlusIcon = () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>;
 const TrashIcon = () => <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>;
 const EyeIcon = () => <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-1 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>;
@@ -38,7 +38,7 @@ export default function ProductSaleList() {
 
     const formatDate = (dateString) => new Date(dateString).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
-    // Helper trạng thái
+
     const getStatus = (start, end, status) => {
         if (status !== 1) return <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-bold">Tạm ngưng</span>;
 

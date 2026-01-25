@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import ContactService from '@/services/ContactService';
 
-// --- ICONS ---
+
 const EyeIcon = ({ size = 18 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>;
 const TrashIcon = ({ size = 18 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
 const CheckIcon = ({ size = 18 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>;
@@ -20,12 +20,12 @@ export default function ContactListPage() {
     const loadData = async () => {
         try {
             setLoading(true);
-            // Thêm limit lớn để lấy danh sách đầy đủ hơn
+
             const res = await ContactService.index({ limit: 1000 });
             
-            // 👇 SỬA LẠI: Kiểm tra an toàn dữ liệu trả về
+
             if (res.data && res.data.success) {
-                // Lấy mảng từ cấu trúc phân trang hoặc mảng thường
+
                 const list = res.data.data?.data || res.data.data || [];
                 setContacts(list);
             }
@@ -40,7 +40,7 @@ export default function ContactListPage() {
         if (confirm("Bạn có chắc muốn xóa liên hệ này?")) {
             try {
                 await ContactService.destroy(id);
-                // Cập nhật giao diện ngay lập tức
+
                 setContacts(contacts.filter(c => c.id !== id));
             } catch (error) {
                 console.error(error);
@@ -49,17 +49,17 @@ export default function ContactListPage() {
         }
     };
 
-    // Hàm đánh dấu đã xong nhanh
+
     const handleMarkAsDone = async (id) => {
         try {
-            // Giả sử status 2 là "Đã xử lý"
+
             const res = await ContactService.reply(id, { status: 2 });
             
-            // Chỉ cập nhật UI nếu API thành công
+
             if(res.data && res.data.success) {
                 setContacts(prev => prev.map(c => c.id === id ? { ...c, status: 2 } : c));
             } else {
-                // Nếu backend trả về false nhưng ko lỗi http, vẫn cập nhật để trải nghiệm mượt (hoặc alert lỗi)
+
                 setContacts(prev => prev.map(c => c.id === id ? { ...c, status: 2 } : c));
             }
         } catch (error) {

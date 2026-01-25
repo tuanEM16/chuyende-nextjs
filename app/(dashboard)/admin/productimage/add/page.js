@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import ProductImageService from '@/services/ProductImageService';
 import ProductService from '@/services/ProductService';
 
-// --- ICONS ---
+
 const UploadIcon = () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>;
 const XIcon = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>;
 const SearchIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>;
@@ -13,17 +13,17 @@ const ChevronDown = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="
 export default function AddProductImageMulti() {
     const router = useRouter();
 
-    // --- STATE ---
+
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(false);
 
-    // State cho Dropdown tìm kiếm sản phẩm
+
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const dropdownRef = useRef(null);
 
-    // State cho form và files
+
     const [files, setFiles] = useState([]); // Mảng các file đã chọn
     const [previews, setPreviews] = useState([]); // Mảng URL preview
     const [baseInfo, setBaseInfo] = useState({
@@ -31,16 +31,16 @@ export default function AddProductImageMulti() {
         title: ''
     });
 
-    // --- EFFECT ---
+
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // 1. Thêm limit lớn để lấy hết sản phẩm (tránh lỗi tìm kiếm không thấy ở trang 2)
+
                 const res = await ProductService.index({ limit: 2000 });
 
                 if (res.data && res.data.success) {
-                    // 👇 SỬA DÒNG NÀY (Quan trọng nhất) 👇
-                    // Phải lấy mảng nằm sâu trong: res.data (body) -> data (paginator) -> data (array)
+
+
                     const productList = res.data.data?.data || [];
 
                     setProducts(productList);
@@ -62,38 +62,38 @@ export default function AddProductImageMulti() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, [dropdownRef]);
 
-    // --- HANDLERS ---
 
-    // Xử lý chọn nhiều ảnh
+
+
     const handleFileChange = (e) => {
         if (e.target.files) {
             const selectedFiles = Array.from(e.target.files);
 
-            // Cập nhật mảng file
+
             setFiles(prev => [...prev, ...selectedFiles]);
 
-            // Tạo preview URL
+
             const newPreviews = selectedFiles.map(file => URL.createObjectURL(file));
             setPreviews(prev => [...prev, ...newPreviews]);
         }
     };
 
-    // Xóa một ảnh khỏi danh sách chờ upload
+
     const removeFile = (index) => {
         setFiles(prev => prev.filter((_, i) => i !== index));
         setPreviews(prev => prev.filter((_, i) => i !== index));
     };
 
-    // Xử lý chọn sản phẩm từ dropdown
+
     const handleSelectProduct = (product) => {
         setSelectedProduct(product);
         setIsDropdownOpen(false);
-        // Tự động điền title/alt gợi ý theo tên sản phẩm nếu đang trống
+
         if (!baseInfo.title) setBaseInfo(prev => ({ ...prev, title: product.name }));
         if (!baseInfo.alt) setBaseInfo(prev => ({ ...prev, alt: `Hình ảnh ${product.name}` }));
     };
 
-    // Submit form
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -103,13 +103,13 @@ export default function AddProductImageMulti() {
         setLoading(true);
 
         try {
-            // Vì Backend API hiện tại (ProductImageController.store) chỉ nhận 1 ảnh/lần
-            // Ta sẽ dùng vòng lặp để gọi API nhiều lần (Promise.all) cho từng ảnh.
+
+
 
             const uploadPromises = files.map((file, index) => {
                 const formData = new FormData();
                 formData.append('product_id', selectedProduct.id);
-                // Tạo title/alt thông minh: Ví dụ "iPhone 15 (1)", "iPhone 15 (2)"
+
                 formData.append('title', `${baseInfo.title} (${index + 1})`);
                 formData.append('alt', baseInfo.alt);
                 formData.append('image', file);
@@ -130,7 +130,7 @@ export default function AddProductImageMulti() {
         }
     };
 
-    // Lọc sản phẩm theo tìm kiếm
+
     const filteredProducts = products.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         String(p.id).includes(searchTerm)

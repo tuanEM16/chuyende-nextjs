@@ -7,7 +7,7 @@ export default function AddBanner() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     
-    // State form matches controller request fields
+
     const [name, setName] = useState('');
     const [link, setLink] = useState('');
     const [position, setPosition] = useState('slideshow');

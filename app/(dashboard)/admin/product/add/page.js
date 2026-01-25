@@ -7,10 +7,10 @@ import ProductService from '@/services/ProductService';
 import CategoryService from '@/services/CategoryService';
 import AttributeService from '@/services/AttributeService';
 
-// --- CẤU HÌNH ĐƯỜNG DẪN ẢNH DANH MỤC ---
+
 const CATEGORY_IMAGE_BASE_URL = 'http://127.0.0.1:8000/images/category/';
 
-// --- ICONS ---
+
 const SaveIcon = ({ size = 20 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
 const ArrowLeftIcon = ({ size = 20 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const UploadIcon = ({ size = 20 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>;
@@ -22,15 +22,15 @@ export default function AddProductPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     
-    // Data nguồn
+
     const [categories, setCategories] = useState([]); 
     const [attributesList, setAttributesList] = useState([]);
 
-    // State cho Custom Dropdown Danh mục
+
     const [isCatDropdownOpen, setIsCatDropdownOpen] = useState(false);
     const catDropdownRef = useRef(null);
 
-    // Form chính
+
     const [formData, setFormData] = useState({
         name: '', 
         category_id: '', 
@@ -58,7 +58,7 @@ export default function AddProductPage() {
         };
         initData();
 
-        // Xử lý click outside để đóng dropdown
+
         const handleClickOutside = (event) => {
             if (catDropdownRef.current && !catDropdownRef.current.contains(event.target)) {
                 setIsCatDropdownOpen(false);
@@ -68,7 +68,7 @@ export default function AddProductPage() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    // Helper lấy ảnh danh mục
+
     const getCatImageUrl = (filename) => {
         if (!filename) return "https://placehold.co/100x100?text=No+Img";
         if (filename.startsWith('http')) return filename;
@@ -77,7 +77,7 @@ export default function AddProductPage() {
 
     const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
-    // Xử lý chọn danh mục từ Custom Dropdown
+
     const handleSelectCategory = (catId) => {
         setFormData(prev => ({ ...prev, category_id: catId }));
         setIsCatDropdownOpen(false);
@@ -163,7 +163,7 @@ export default function AddProductPage() {
         }
     };
 
-    // Tìm danh mục đang chọn để hiển thị
+
     const selectedCategory = categories.find(c => c.id == formData.category_id);
 
     return (

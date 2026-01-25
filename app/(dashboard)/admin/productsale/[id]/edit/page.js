@@ -6,7 +6,7 @@ import Link from 'next/link';
 import ProductSaleService from '@/services/ProductSaleService';
 import ProductService from '@/services/ProductService';
 
-// --- ICONS ---
+
 const ClockIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>;
 const SaveIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
 const ArrowLeftIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
@@ -20,10 +20,10 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
 
-    // Data nguồn
+
     const [productList, setProductList] = useState([]);
 
-    // Form chung (Campaign Info)
+
     const [campaignInfo, setCampaignInfo] = useState({
         name: '',
         date_begin: '',
@@ -31,14 +31,14 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
         status: 1
     });
 
-    // Danh sách các item trong chiến dịch
+
     const [saleItems, setSaleItems] = useState([]);
 
-    // Quick Setup State
+
     const [quickValue, setQuickValue] = useState(20);
     const [quickType, setQuickType] = useState('percent');
 
-    // Format Date helper
+
     const formatDateTime = (dateString) => {
         if (!dateString) return '';
         const d = new Date(dateString);
@@ -54,41 +54,41 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
             try {
                 setFetching(true);
 
-                // 1. Lấy thông tin item hiện tại
+
                 const currentRes = await ProductSaleService.show(currentId);
                 const currentData = currentRes.data?.data || currentRes.data;
 
                 if (!currentData) throw new Error("Không tìm thấy thông tin khuyến mãi.");
 
-                // --- KHẮC PHỤC LỖI MẤT DỮ LIỆU KHI PHÂN TRANG ---
 
-                // 2. Lấy TOÀN BỘ danh sách khuyến mãi (thêm limit lớn)
-                // Thay vì chỉ lấy 20 dòng mặc định, ta lấy 2000 dòng để chắc chắn lấy hết các "anh em"
+
+
+
                 const allSalesRes = await ProductSaleService.index({ limit: 2000 });
 
-                // Xử lý lấy mảng data từ cấu trúc phân trang (Laravel Paginate)
-                // Cấu trúc thường gặp: res.data.data.data (nếu có phân trang) HOẶC res.data.data (nếu không phân trang)
+
+
                 const allSalesData = allSalesRes.data?.data;
                 const allSales = Array.isArray(allSalesData) ? allSalesData : (allSalesData?.data || []);
 
-                // 3. Lấy TOÀN BỘ sản phẩm (để hiển thị tên, ảnh đúng)
+
                 const prodRes = await ProductService.index({ limit: 2000 });
                 const prodData = prodRes.data?.data;
                 const products = Array.isArray(prodData) ? prodData : (prodData?.data || []);
 
                 setProductList(products);
 
-                // 4. Lọc ra các item "anh em" cùng chiến dịch (Client-side filtering)
+
                 const siblings = allSales.filter(item =>
                     item.name === currentData.name &&
                     item.date_begin === currentData.date_begin &&
                     item.date_end === currentData.date_end
                 );
 
-                // Nếu tìm thấy anh em thì dùng danh sách đó, nếu không thì dùng chính nó
+
                 const targetItems = siblings.length > 0 ? siblings : [currentData];
 
-                // 5. Setup Form
+
                 setCampaignInfo({
                     name: currentData.name,
                     date_begin: formatDateTime(currentData.date_begin),
@@ -96,7 +96,7 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
                     status: currentData.status ?? 1
                 });
 
-                // 6. Map dữ liệu
+
                 const mappedItems = targetItems.map(item => {
                     const prod = products.find(p => String(p.id) === String(item.product_id));
                     return {
@@ -115,7 +115,7 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
 
             } catch (error) {
                 console.error("Lỗi tải dữ liệu:", error);
-                // alert("Có lỗi xảy ra khi tải dữ liệu.");
+
             } finally {
                 setFetching(false);
             }
@@ -142,7 +142,7 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
         }
     };
 
-    // Áp dụng thiết lập nhanh
+
     const applyQuickSettings = () => {
         const updatedList = saleItems.map(item => {
             if (item.is_deleted) return item;
@@ -206,7 +206,7 @@ export default function EditSaleBulkPage({ params: paramsPromise }) {
         }
     };
 
-    // Tính tổng doanh thu giảm dự kiến
+
     const totalReduction = saleItems.reduce((acc, item) => {
         if (item.is_deleted) return acc;
         const sale = Number(item.price_sale);

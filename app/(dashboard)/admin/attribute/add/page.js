@@ -12,7 +12,7 @@ export default function AddAttributePage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
 
-    // CHỈ CÒN NAME
+
     const [name, setName] = useState('');
 
 const handleSubmit = async (e) => {
@@ -25,13 +25,13 @@ const handleSubmit = async (e) => {
         try {
             const res = await AttributeService.store(dataToSend);
             
-            // --- DEBUG QUAN TRỌNG: Mở F12 xem nó in ra cái gì ---
+
             console.log("Phản hồi từ Server:", res); 
 
-            // --- LOGIC KIỂM TRA ĐA NĂNG ---
-            // 1. res.success: Nếu axios interceptor đã gỡ data ra (trả về {success: true...})
-            // 2. res.data.success: Nếu axios trả về nguyên object (trả về {data: {success: true...}})
-            // 3. res.status: Kiểm tra HTTP code chuẩn
+
+
+
+
             const isSuccess = 
                 res.success === true || 
                 (res.data && res.data.success === true) ||
@@ -42,14 +42,14 @@ const handleSubmit = async (e) => {
                 alert('Thêm thuộc tính thành công!');
                 router.push('/admin/attribute');
             } else {
-                // Lấy thông báo lỗi linh hoạt
+
                 const errorMsg = res.message || (res.data && res.data.message) || 'Lỗi phản hồi từ server';
                 alert('Thêm thất bại: ' + errorMsg);
             }
 
         } catch (error) {
             console.error("Lỗi Catch:", error);
-            // Lấy thông báo lỗi từ backend (nếu có)
+
             const errorMsg = error.response?.data?.message || error.message || 'Lỗi hệ thống';
             alert('Lỗi: ' + errorMsg);
         } finally {

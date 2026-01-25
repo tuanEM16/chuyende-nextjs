@@ -3,12 +3,12 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import PostService from '@/services/PostService';
 
-// --- ICONS ---
+
 const SaveIcon = () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
 const ArrowLeftIcon = () => <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 
 export default function EditPost({ params: paramsPromise }) {
-    // 1. Lấy ID từ URL (Next.js 15+)
+
     const params = use(paramsPromise);
     const id = params.id;
     const router = useRouter();
@@ -16,7 +16,7 @@ export default function EditPost({ params: paramsPromise }) {
     const [loading, setLoading] = useState(true);
     const [processing, setProcessing] = useState(false);
 
-    // 2. Khai báo State (Khớp với DB của bạn)
+
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [content, setContent] = useState(''); // QUAN TRỌNG: Dùng 'content'
@@ -24,7 +24,7 @@ export default function EditPost({ params: paramsPromise }) {
     const [image, setImage] = useState(null);       // File ảnh mới (nếu chọn)
     const [preview, setPreview] = useState(null);   // URL ảnh preview
 
-    // 3. Load dữ liệu cũ khi vào trang
+
     useEffect(() => {
         if (!id) return;
 
@@ -34,17 +34,17 @@ export default function EditPost({ params: paramsPromise }) {
                 const res = await PostService.show(id);
                 console.log("Kết quả API:", res);
 
-                // Lấy data an toàn
+
                 const data = res.data?.data || res.data;
 
                 if (data) {
                     setTitle(data.title || '');
                     setDescription(data.description || '');
-                    // Lấy nội dung từ cột content
+
                     setContent(data.content || ''); 
                     setStatus(data.status ?? 1);
                     
-                    // Hiển thị ảnh cũ
+
                     if (data.image) {
                         setPreview(PostService.getImageUrl(data.image));
                     }
@@ -62,7 +62,7 @@ export default function EditPost({ params: paramsPromise }) {
         fetchData();
     }, [id]);
 
-    // 4. Xử lý chọn ảnh mới
+
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -71,12 +71,12 @@ export default function EditPost({ params: paramsPromise }) {
         }
     };
 
-    // 5. Gửi form cập nhật
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setProcessing(true);
 
-        // Dùng FormData để gửi file
+
         const formData = new FormData();
         formData.append('_method', 'PUT'); // Bắt buộc đối với Laravel khi upload ảnh lúc update
         formData.append('title', title);
@@ -84,7 +84,7 @@ export default function EditPost({ params: paramsPromise }) {
         formData.append('content', content); // Gửi key 'content'
         formData.append('status', status);
         
-        // Chỉ gửi ảnh nếu người dùng chọn ảnh mới
+
         if (image) {
             formData.append('image', image);
         }

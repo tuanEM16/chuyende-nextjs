@@ -6,7 +6,7 @@ import Link from 'next/link';
 import ProductStoreService from '@/services/ProductStoreService';
 import ProductService from '@/services/ProductService';
 
-// --- ICONS ---
+
 const SaveIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
 const ArrowLeftIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const TrashIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>;
@@ -20,16 +20,16 @@ export default function EditInventoryBulkPage({ params: paramsPromise }) {
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
     
-    // Thông tin lô hàng (Batch Info)
+
     const [batchInfo, setBatchInfo] = useState({
         created_at: '', // Thời gian nhập kho
         total_items: 0
     });
 
-    // Danh sách sản phẩm trong lô nhập này
+
     const [storeItems, setStoreItems] = useState([]);
 
-    // Format Date helper
+
     const formatDateTime = (dateString) => {
         if (!dateString) return '';
         const d = new Date(dateString);
@@ -44,39 +44,39 @@ export default function EditInventoryBulkPage({ params: paramsPromise }) {
             try {
                 setFetching(true);
                 
-                // 1. Lấy thông tin phiếu nhập hiện tại
+
                 const currentRes = await ProductStoreService.show(currentId);
                 const currentData = currentRes.data?.data || currentRes.data;
 
                 if (!currentData) throw new Error("Không tìm thấy phiếu nhập.");
 
-                // 2. Lấy tất cả phiếu nhập (để lọc cùng đợt)
-                // Cần lấy số lượng lớn để bypass phân trang
+
+
                 const allStoreRes = await ProductStoreService.index({ limit: 2000 });
-                // Xử lý an toàn: API có thể trả về mảng hoặc object phân trang
+
                 const allStores = Array.isArray(allStoreRes.data?.data) 
                     ? allStoreRes.data.data 
                     : (allStoreRes.data?.data?.data || []);
 
-                // 3. Lấy thông tin sản phẩm (để hiện tên, hình ảnh)
-                // Cần lấy số lượng lớn để tìm thấy sản phẩm
+
+
                 const prodRes = await ProductService.index({ limit: 2000 });
                 const products = Array.isArray(prodRes.data?.data) 
                     ? prodRes.data.data 
                     : (prodRes.data?.data?.data || []);
 
-                // 4. Lọc ra các phiếu nhập CÙNG THỜI GIAN (created_at)
-                // Lưu ý: Cần so sánh chính xác chuỗi thời gian từ DB
+
+
                 const siblings = allStores.filter(item => item.created_at === currentData.created_at);
                 const targetItems = siblings.length > 0 ? siblings : [currentData];
 
-                // 5. Cập nhật thông tin lô
+
                 setBatchInfo({
                     created_at: currentData.created_at,
                     total_items: targetItems.length
                 });
 
-                // 6. Map dữ liệu
+
                 const mappedItems = targetItems.map(item => {
                     const prod = products.find(p => String(p.id) === String(item.product_id));
                     return {
@@ -95,7 +95,7 @@ export default function EditInventoryBulkPage({ params: paramsPromise }) {
 
             } catch (error) {
                 console.error("Lỗi tải dữ liệu:", error);
-                // alert("Có lỗi xảy ra khi tải dữ liệu.");
+
             } finally {
                 setFetching(false);
             }
@@ -104,21 +104,21 @@ export default function EditInventoryBulkPage({ params: paramsPromise }) {
         initData();
     }, [currentId]);
 
-    // Handle thay đổi giá nhập
+
     const handlePriceChange = (index, value) => {
         const newItems = [...storeItems];
         newItems[index].price_root = value;
         setStoreItems(newItems);
     };
 
-    // Handle thay đổi số lượng
+
     const handleQtyChange = (index, value) => {
         const newItems = [...storeItems];
         newItems[index].qty = value;
         setStoreItems(newItems);
     };
 
-    // Handle xóa sản phẩm khỏi lô nhập
+
     const handleRemoveItem = (index) => {
         if(confirm("Bạn muốn xóa sản phẩm này khỏi phiếu nhập? Tồn kho sẽ bị trừ đi.")) {
             const newItems = [...storeItems];
@@ -135,18 +135,18 @@ export default function EditInventoryBulkPage({ params: paramsPromise }) {
             const itemsToUpdate = storeItems.filter(item => !item.is_deleted);
             const itemsToDelete = storeItems.filter(item => item.is_deleted);
 
-            // 1. Update hàng loạt
+
             const updatePromises = itemsToUpdate.map(item => {
                 const payload = {
                     product_id: item.product_id, // Giữ nguyên
                     price_root: item.price_root,
                     qty: item.qty,
-                    // created_by, created_at giữ nguyên hoặc backend tự xử lý updated_at
+
                 };
                 return ProductStoreService.update(item.id, payload);
             });
 
-            // 2. Delete hàng loạt
+
             const deletePromises = itemsToDelete.map(item => {
                 return ProductStoreService.destroy(item.id);
             });
@@ -164,7 +164,7 @@ export default function EditInventoryBulkPage({ params: paramsPromise }) {
         }
     };
 
-    // Tính tổng tiền nhập lô hàng này
+
     const totalImportValue = storeItems.reduce((acc, item) => {
         if(item.is_deleted) return acc;
         return acc + (Number(item.price_root) * Number(item.qty));

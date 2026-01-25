@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import CategoryService from '@/services/CategoryService';
 
-// --- ICONS ---
+
 const SaveIcon = ({ size = 20 }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>);
 const ArrowLeftIcon = ({ size = 20 }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>);
 const UploadIcon = ({ size = 20 }) => (<svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>);
@@ -19,14 +19,14 @@ export default function EditCategoryPage({ params: paramsPromise }) {
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
     
-    // Data
+
     const [categories, setCategories] = useState([]);
     
-    // Dropdown State
+
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
 
-    // Form Data (Đã thêm slug)
+
     const [formData, setFormData] = useState({
         name: '',
         slug: '', // <--- ĐÃ THÊM LẠI SLUG
@@ -50,13 +50,13 @@ export default function EditCategoryPage({ params: paramsPromise }) {
                     CategoryService.index()
                 ]);
 
-                // 1. Xử lý danh sách cha
+
                 if (listRes.data?.success || Array.isArray(listRes.data)) {
                     const allCats = listRes.data.data || listRes.data || [];
                     setCategories(allCats.filter(cat => String(cat.id) !== String(id)));
                 }
 
-                // 2. Điền dữ liệu vào form
+
                 const cat = detailRes.data?.data || detailRes.data;
                 if (cat) {
                     setFormData({
@@ -83,7 +83,7 @@ export default function EditCategoryPage({ params: paramsPromise }) {
 
         fetchData();
 
-        // Click outside dropdown
+
         const handleClickOutside = (event) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setIsDropdownOpen(false);
@@ -124,7 +124,6 @@ export default function EditCategoryPage({ params: paramsPromise }) {
             data.append('sort_order', formData.sort_order);
             data.append('description', formData.description);
             data.append('status', formData.status);
-            data.append('_method', 'PUT'); 
 
             if (imageFile) {
                 data.append('image', imageFile);

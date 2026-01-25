@@ -9,12 +9,12 @@ import TopicService from '@/services/TopicService';
 export default function AddMenuPage() {
     const router = useRouter();
     
-    // Data nguồn để chọn
+
     const [categories, setCategories] = useState([]);
     const [topics, setTopics] = useState([]);
     const [menus, setMenus] = useState([]); // Để chọn menu cha
 
-    // Form data
+
     const [form, setForm] = useState({
         name: '',
         link: '',
@@ -26,7 +26,7 @@ export default function AddMenuPage() {
         status: 1
     });
 
-    // 1. Load dữ liệu (Category, Topic, Menu cha)
+
     useEffect(() => {
         (async () => {
             const [catRes, topicRes, menuRes] = await Promise.all([
@@ -41,7 +41,7 @@ export default function AddMenuPage() {
         })();
     }, []);
 
-    // 2. Xử lý khi thay đổi Loại Menu
+
     const handleTypeChange = (e) => {
         const type = e.target.value;
         setForm(prev => ({ 
@@ -53,7 +53,7 @@ export default function AddMenuPage() {
         }));
     };
 
-    // 3. Xử lý khi chọn 1 mục cụ thể (VD: Chọn Category 'Gạch men')
+
     const handleSelectionChange = (e) => {
         const id = e.target.value;
         const type = form.type;

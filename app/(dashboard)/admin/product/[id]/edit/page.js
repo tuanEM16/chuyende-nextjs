@@ -7,10 +7,10 @@ import ProductService from '@/services/ProductService';
 import CategoryService from '@/services/CategoryService';
 import AttributeService from '@/services/AttributeService';
 
-// --- CẤU HÌNH ẢNH DANH MỤC ---
+
 const CATEGORY_IMAGE_BASE_URL = 'http://127.0.0.1:8000/images/category/';
 
-// --- ICONS ---
+
 const SaveIcon = ({ size = 20 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>;
 const ArrowLeftIcon = ({ size = 20 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>;
 const UploadIcon = ({ size = 20 }) => <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>;
@@ -27,21 +27,21 @@ export default function EditProductPage({ params: paramsPromise }) {
     const [categories, setCategories] = useState([]);
     const [attributesList, setAttributesList] = useState([]);
     
-    // State cho Custom Dropdown
+
     const [isCatDropdownOpen, setIsCatDropdownOpen] = useState(false);
     const catDropdownRef = useRef(null);
 
-    // Thumbnail states
+
     const [currentImageUrl, setCurrentImageUrl] = useState(null);
     const [imageFile, setImageFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
 
-    // Gallery states
+
     const [galleryFiles, setGalleryFiles] = useState([]);
     const [galleryPreviews, setGalleryPreviews] = useState([]);
     const [oldGallery, setOldGallery] = useState([]);
 
-    // Attribute State
+
     const [productAttributes, setProductAttributes] = useState([]);
 
     const [formData, setFormData] = useState({
@@ -64,11 +64,11 @@ export default function EditProductPage({ params: paramsPromise }) {
                     ProductService.show(id)
                 ]);
 
-                // 1. Categories & Attributes
+
                 if (catRes.data) setCategories(catRes.data.data || catRes.data);
                 if (attrRes.data) setAttributesList(attrRes.data.data || attrRes.data);
 
-                // 2. Product Data
+
                 const productData = prodRes.data && prodRes.data.success ? prodRes.data.data : (prodRes.data || prodRes);
 
                 if (productData) {
@@ -84,7 +84,7 @@ export default function EditProductPage({ params: paramsPromise }) {
                     if (productData.thumbnail) setCurrentImageUrl(ProductService.getImageUrl(productData.thumbnail));
                     if (productData.product_images) setOldGallery(productData.product_images);
                     
-                    // Attributes
+
                     if (productData.product_attributes && productData.product_attributes.length > 0) {
                         setProductAttributes(productData.product_attributes.map(a => ({
                             attribute_id: a.attribute_id,
@@ -102,7 +102,7 @@ export default function EditProductPage({ params: paramsPromise }) {
 
         fetchData();
 
-        // Click outside dropdown
+
         const handleClickOutside = (event) => {
             if (catDropdownRef.current && !catDropdownRef.current.contains(event.target)) {
                 setIsCatDropdownOpen(false);
@@ -113,7 +113,7 @@ export default function EditProductPage({ params: paramsPromise }) {
 
     }, [id]);
 
-    // Helper lấy ảnh danh mục
+
     const getCatImageUrl = (filename) => {
         if (!filename) return "https://placehold.co/100x100?text=No+Img";
         if (filename.startsWith('http')) return filename;
@@ -122,13 +122,13 @@ export default function EditProductPage({ params: paramsPromise }) {
 
     const handleChange = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
-    // Xử lý chọn danh mục từ Custom Dropdown
+
     const handleSelectCategory = (catId) => {
         setFormData(prev => ({ ...prev, category_id: catId }));
         setIsCatDropdownOpen(false);
     };
 
-    // --- XỬ LÝ ẢNH ---
+
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -157,7 +157,7 @@ export default function EditProductPage({ params: paramsPromise }) {
         }
     };
 
-    // --- XỬ LÝ THUỘC TÍNH ---
+
     const addAttributeRow = () => setProductAttributes([...productAttributes, { attribute_id: '', value: '' }]);
     const removeAttributeRow = (index) => {
         const list = [...productAttributes];
@@ -170,7 +170,7 @@ export default function EditProductPage({ params: paramsPromise }) {
         setProductAttributes(list);
     };
 
-    // --- SUBMIT ---
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -179,11 +179,11 @@ export default function EditProductPage({ params: paramsPromise }) {
             data.append('name', formData.name);
             data.append('category_id', formData.category_id);
             data.append('price_buy', formData.price);
-            // Không gửi qty khi edit
+
             data.append('description', formData.description);
             data.append('content', formData.description);
             data.append('status', formData.status);
-            data.append('_method', 'PUT'); 
+     
 
             if (imageFile) data.append('thumbnail', imageFile);
 
@@ -211,7 +211,7 @@ export default function EditProductPage({ params: paramsPromise }) {
         }
     };
 
-    // Tìm danh mục đang chọn để hiển thị ảnh
+
     const selectedCategory = categories.find(c => c.id == formData.category_id);
 
     return (

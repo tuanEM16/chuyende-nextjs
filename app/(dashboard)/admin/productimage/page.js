@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation'; // <--- Import thêm useRouter
 import ProductImageService from '@/services/ProductImageService';
 
-// --- ICONS ---
+
 const PlusIcon = () => (
     <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
         <line x1="12" y1="5" x2="12" y2="19" />
@@ -62,7 +62,7 @@ export default function ProductImageGallery() {
         }
     };
 
-    // Hàm chuyển trang khi click vào card
+
     const handleCardClick = (id) => {
         router.push(`/admin/productimage/${id}/show`);
     };
@@ -83,7 +83,7 @@ export default function ProductImageGallery() {
                     {/* Grid hiển thị ảnh */}
                     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                         {images.map((item) => (
-                            // ĐỔI TỪ LINK THÀNH DIV
+
                             <div
                                 key={item.id}
                                 onClick={() => handleCardClick(item.id)}
